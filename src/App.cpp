@@ -4,10 +4,6 @@
 #include <fstream>
 #include <sstream>
 
-std::string readFile(const std::string& filename);
-
-Program* p;
-
 App::App() :
 		Application("Title", 640, 480)
 {
@@ -16,43 +12,47 @@ App::App() :
 	mCameraH = mCameraV = 0;
 	mOffsetX = mOffsetY = 0;
 	mDragOriginX = mDragOriginY = 0.0f;
+	mDistance = 5.0f;
 	mDragging = mFriction = false;
 	mRabbit = true;
+	mDebug = false;
 
-	VertexShader vs;
-	vs.Source(readFile("shaders/realistic.vert"));
-	vs.Compile();
-
-	FragmentShader fs;
-	fs.Source(readFile("shaders/realistic.frag"));
-	fs.Compile();
-
-	ProgramPtr shader(new Program());
-	shader->AttachShader(vs).AttachShader(fs);
-	shader->BindAttribute(VertexAttributes::POSITION, "in_Position");
-	shader->BindAttribute(VertexAttributes::NORMAL, "in_Normal");
-	shader->Link();
-
-	p = shader.get();
+	Handle h = -1;
+	h = ShaderManager.Add("./shaders/realistic");
+	ShaderManager.Add("./shaders/debug");
+	Program* shader = ShaderManager.GetElement(h)->GetShader();
 
 	Uniform::Bind(*shader, "LightPosition", Vector3(0.0f, 0.0f, 20.0f));
-	Uniform::Bind(*shader, "LightAmbientColor", Vector3(0.1f, 0.1f, 0.1f));
+	Uniform::Bind(*shader, "LightAmbientColor", Vector3(0.3f, 0.3f, 0.3f));
 	Uniform::Bind(*shader, "LightDiffuseColor", Vector3(0.9f, 0.9f, 0.9f));
 	Uniform::Bind(*shader, "LightSpecularColor", Vector3(0.9f, 0.9f, 0.9f));
 
-	Uniform::Bind(*shader, "MaterialAmbientColor", Vector3(0.1f, 0.1f, 0.1f));
+	Uniform::Bind(*shader, "MaterialAmbientColor", Vector3(0.3f, 0.3f, 0.3f));
 	Uniform::Bind(*shader, "MaterialDiffuseColor", Vector3(0.9f, 0.9f, 0.9f));
 	Uniform::Bind(*shader, "MaterialSpecularColor", Vector3(0.9f, 0.9f, 0.9f));
 	Uniform::Bind(*shader, "MaterialShininess", 256.0f);
 
-	mCamera.SetLookAt(Vector3(0.0f, 0.0f, 5.0f), Vector3::Zero);
+	mCamera.SetLookAt(Vector3(0.0f, 0.0f, mDistance), Vector3::Zero);
 	mCamera.SetFustrum(40.0f, (float) 640 / 480, 1.0f, 20.0f);
 
 	mRenderer->Bind(shader);
 	mRenderer->SetCamera(&mCamera);
 
 	mGeom = new Geometry();
-	mGeom->SetMesh(MeshManager::Get("models/bunny_smooth.obj"));
+
+	// verts: 2503
+	// faces: 4968
+	h = MeshManager.Add("./models/bunny_smooth.obj");
+
+	// verts: 2503
+	// faces: 4968
+	MeshManager.Add("./models/bunny_flat.obj");
+
+	// verts: 242841
+	// faces: 483744
+	MeshManager.Add("./models/zerling.obj");
+
+	mGeom->SetMesh(MeshManager.GetElement(h)->GetMesh());
 	mGeom->LocalTransform.SetPosition(Vector3(0.0f, -1.0f, 0.0f));
 
 	mWorld.AttachChild(mGeom);
@@ -86,6 +86,17 @@ void App::OnMouse(int button, int state, int x, int y)
 			mDragging = false;
 		}
 	}
+
+	if (button == 3 && state == GLUT_DOWN)
+	{
+		mDistance -= 0.3f;
+	}
+
+	if (button == 4 && state == GLUT_DOWN)
+	{
+		mDistance += 0.3f;
+	}
+
 }
 
 void App::OnMouseMotion(int x, int y)
@@ -105,15 +116,26 @@ void App::OnKeyboard(unsigned char key, int x, int y)
 	{
 		if (mRabbit)
 		{
-			mGeom->SetMesh(MeshManager::Get("models/cube.obj"));
-			mGeom->LocalTransform.SetPosition(Vector3(0.0f, 0.0f, 0.0f));
+			mGeom->SetMesh(MeshManager.GetElement("./models/zerling.obj")->GetMesh());
 		}
 		else
 		{
-			mGeom->SetMesh(MeshManager::Get("models/bunny_smooth.obj"));
-			mGeom->LocalTransform.SetPosition(Vector3(0.0f, -1.0f, 0.0f));
+			mGeom->SetMesh(MeshManager.GetElement("./models/bunny_smooth.obj")->GetMesh());
 		}
 		mRabbit = !mRabbit;
+	}
+
+	if (key == 's')
+	{
+		if (mDebug)
+		{
+			mRenderer->Bind(ShaderManager.GetElement("./shaders/realistic")->GetShader());
+		}
+		else
+		{
+			mRenderer->Bind(ShaderManager.GetElement("./shaders/debug")->GetShader());
+		}
+		mDebug = !mDebug;
 	}
 
 	if (key == 'f')
@@ -139,7 +161,7 @@ void App::OnUpdate(const Real delta)
 	static Real counter = 0.0f;
 	counter += delta;
 
-	if(counter >= 1.0f)
+	if (counter >= 1.0f)
 	{
 		std::stringstream ss;
 		ss << "Title @ FPS : " << mFPS;
@@ -150,16 +172,16 @@ void App::OnUpdate(const Real delta)
 
 	mWorld.OnUpdate(delta);
 
-	Real offX =	mOffsetX * 130.0f;
+	Real offX = mOffsetX * 130.0f;
 	Real offY = mOffsetY * 130.0f;
 
-	mCamera.LocalTransform.Rotate(
-		Quaternion::fromAxisAngle(mCamera.LocalTransform.Up(), offX * delta));
-	mCamera.LocalTransform.Rotate(
-		Quaternion::fromAxisAngle(mCamera.LocalTransform.Side(), offY * delta));
+	mCamera.LocalTransform.SetPosition(Vector3(0.0f, 0.0f, -mDistance));
+	mCamera.LocalTransform.Rotate(Quaternion::fromAxisAngle(mCamera.LocalTransform.Up(), offX * delta));
+	mCamera.LocalTransform.Rotate(Quaternion::fromAxisAngle(mCamera.LocalTransform.Side(), offY * delta));
 
 	// friction baby!
-	if (!mDragging) {
+	if (!mDragging)
+	{
 		if (mFriction)
 		{
 			if (Math::abs(mOffsetX) > Math::epsilon)
@@ -174,7 +196,9 @@ void App::OnUpdate(const Real delta)
 			if (mOffsetY == 0.0f && mOffsetX == 0.0f)
 				mFriction = false;
 		}
-	} else {
+	}
+	else
+	{
 		mOffsetX = mOffsetY = 0;
 	}
 }

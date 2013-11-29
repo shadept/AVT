@@ -84,8 +84,6 @@ private:
 	static GLuint msCurrentlyInUse;
 };
 
-typedef std::shared_ptr<Program> ProgramPtr;
-
 #include "Math.h"
 
 struct Uniform
@@ -94,5 +92,51 @@ struct Uniform
 	static void Bind(const Program& program, const std::string& name, const Matrix4& value);
 	static void Bind(const Program& program, const std::string& name, const Vector3& value);
 };
+
+#include "Manager.h"
+
+struct ShaderResource: public Resource
+{
+public:
+	ShaderResource(Handle handle, const std::string& filename) : Resource(handle, filename), mProgram(0) {};
+
+	Program* GetShader() { return mProgram; }
+
+	friend struct ShaderLoader;
+
+private:
+	Program* mProgram;
+};
+
+#include <fstream>
+
+std::string readFile(const std::string& filename);
+
+struct ShaderLoader
+{
+	static bool Load(ShaderResource** mesh, Handle handle, const std::string& filename)
+	{
+		*mesh = new ShaderResource(handle, filename);
+		Program* shader = new Program();
+		(*mesh)->mProgram = shader;
+
+		VertexShader vs;
+		vs.Source(readFile(filename+".vert"));
+		vs.Compile();
+
+		FragmentShader fs;
+		fs.Source(readFile(filename+".frag"));
+		fs.Compile();
+
+		shader->AttachShader(vs).AttachShader(fs);
+		shader->BindAttribute(VertexAttributes::POSITION, "in_Position");
+		shader->BindAttribute(VertexAttributes::NORMAL, "in_Normal");
+		shader->Link();
+
+		return true;
+	}
+};
+
+extern ResourceManager<ShaderResource, ShaderLoader> ShaderManager;
 
 #endif /* SHADER_H_ */

@@ -29,7 +29,7 @@ public:
 
 	void SetCamera(Camera* camera);
 
-	void Bind(const ProgramPtr shader);
+	void Bind(const Program* shader);
 
 	void DrawScene(Node* scene);
 	void Draw(const Geometry* geometry);
@@ -38,7 +38,7 @@ public:
 	mutable int _frameCounter;
 
 private:
-	ProgramPtr mShader, mPickingShader;
+	const Program* mShader, *mPickingShader;
 	Camera* mCamera;
 	bool mPicking;
 

@@ -3,6 +3,8 @@
 #include <cassert>
 #include <sstream>
 
+ResourceManager<MeshResource, MeshLoader> MeshManager;
+
 void LoadMesh(std::istream& input, std::vector<Vertice>& vertices, std::vector<TexCoords>& uvs, std::vector<Normal>& normals, std::vector<Face>& faces)
 {
 	std::string line;
@@ -55,15 +57,21 @@ void LoadMesh(std::istream& input, std::vector<Vertice>& vertices, std::vector<T
 	}
 }
 
-Mesh::Mesh() : mVertexArrayId(0), mCount(0)
+Mesh::Mesh() :
+		mVertexArrayId(0), mVertexBufferId(0), mCount(0)
 {
 }
 
 Mesh::~Mesh()
 {
+	glBindVertexArray(0);
 	if (mVertexArrayId != 0)
 		glDeleteVertexArrays(1, &mVertexArrayId);
 	mVertexArrayId = 0;
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	if (mVertexBufferId != 0)
+		glDeleteBuffers(1, &mVertexBufferId);
+	mVertexBufferId = 0;
 }
 
 void Mesh::Load(std::istream& input)
@@ -93,23 +101,20 @@ void Mesh::Load(std::istream& input)
 		mVertices.push_back(v2);
 	}
 
-	GLuint vertexBuffer = 0;
-	glGenBuffers(1, &vertexBuffer);
+	glGenBuffers(1, &mVertexBufferId);
 
-
-	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, mVertexBufferId);
 	glBufferData(GL_ARRAY_BUFFER, mVertices.size() * sizeof(VertexAttrib), &mVertices[0], GL_STATIC_DRAW);
 	checkOpenGLError("Failed to copy vertex data");
 
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexAttrib), 0);
 
-	glEnableVertexAttribArray(1); // FIXME attrib 1 is COLOR
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(VertexAttrib), (GLvoid*)sizeof(Vertice));
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(VertexAttrib), (GLvoid*) sizeof(Vertice));
 
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glDeleteBuffers(1, &vertexBuffer);
 }
 
 int Mesh::GetCount() const

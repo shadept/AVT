@@ -32,7 +32,7 @@ int Renderer::Pick(Node* node, int x, int y)
 		fs.Source(readFile("shaders/picking.frag"));
 		fs.Compile();
 
-		mPickingShader.reset(new Program());
+		mPickingShader = new Program();
 		mPickingShader->AttachShader(vs).AttachShader(fs);
 		mPickingShader->BindAttribute(VertexAttributes::POSITION, "in_Position");
 		mPickingShader->Link();
@@ -92,7 +92,7 @@ void Renderer::SetCamera(Camera* camera)
 	mCamera = camera;
 }
 
-void Renderer::Bind(const ProgramPtr shader)
+void Renderer::Bind(const Program* shader)
 {
 	shader->Use();
 	mShader = shader;

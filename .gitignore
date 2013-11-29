@@ -6,3 +6,5 @@ vs/Debug
 vs/Release
 vs/assignment/Debug
 vs/assignment/Release
+.cproject
+.project

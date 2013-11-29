@@ -5,8 +5,6 @@
 #include <vector>
 
 #include "OpenGL.h"
-#include "Manager.h"
-
 
 struct Vertice
 {
@@ -57,11 +55,44 @@ public:
 	void Unbind() const;
 
 private:
-	GLuint mVertexArrayId;
+	GLuint mVertexArrayId, mVertexBufferId;
 	std::vector<VertexAttrib> mVertices;
 	int mCount;
 };
 
-typedef Manager<Mesh> MeshManager;
+#include "Manager.h"
+
+struct MeshResource: public Resource
+{
+public:
+	MeshResource(Handle handle, const std::string& filename) : Resource(handle, filename), mMesh(0) {};
+
+	Mesh* GetMesh() { return mMesh; }
+
+	friend struct MeshLoader;
+
+private:
+	Mesh* mMesh;
+};
+
+#include <fstream>
+
+struct MeshLoader
+{
+	static bool  Load(MeshResource** mesh, Handle handle, const std::string& filename)
+	{
+		*mesh = new MeshResource(handle, filename);
+		(*mesh)->mMesh = new Mesh();
+
+		std::ifstream file(filename);
+		if(file.is_open()) {
+			(*mesh)->mMesh->Load(file);
+			return true;
+		}
+		return false;
+	}
+};
+
+extern ResourceManager<MeshResource, MeshLoader> MeshManager;
 
 #endif /* MESH_H_ */

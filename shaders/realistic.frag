@@ -27,9 +27,8 @@ void main(void)
 {
 	vec3 V = exVertex;
 	vec3 N = normalize(exNormal);
-	// vec3 Lpos = vec3(ViewMatrix * vec4(LightPosition, 1.0));
-
-	vec3 Lpos = LightPosition;
+	vec3 Lpos = vec3(ViewMatrix * vec4(LightPosition, 1.0));
+	//vec3 Lpos = LightPosition;
 	vec3 L = Lpos - V;
 	float Ldist = length(L);
 	L = normalize(L);

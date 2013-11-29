@@ -3,6 +3,8 @@
 #include <cassert>
 #include <iostream>
 
+ResourceManager<ShaderResource, ShaderLoader> ShaderManager;
+
 Shader::Shader(ShaderType type)
 {
 	mType = type;
@@ -64,7 +66,7 @@ GLint Program::operator ()(const std::string& attribute) const
 		GLint location = glGetAttribLocation(mProgram, attribute.c_str());
 //		assert(location != -1 && "Uniform not in shader");
 		if (location == -1) std::cout << "Warning: Attribute " << attribute << " location not found." << std::endl;
-		else std::cout << "Attribute " << attribute << " location: " << location << std::endl;
+//		else std::cout << "Attribute " << attribute << " location: " << location << std::endl;
 		mAttributes[attribute] = location;
 		return location;
 	}
@@ -80,7 +82,7 @@ GLint Program::operator [](const std::string& uniform) const
 		GLint location = glGetUniformLocation(mProgram, uniform.c_str());
 //		assert(location != -1 && "Uniform not in shader");
 		if (location == -1) std::cout << "Warning: Uniform " << uniform << " location not found." << std::endl;
-		else std::cout << "Uniform " << uniform << " location: " << location << std::endl;
+//		else std::cout << "Uniform " << uniform << " location: " << location << std::endl;
 		mUniforms[uniform] = location;
 		return location;
 	}

@@ -29,9 +29,10 @@ private:
 	Real mOffsetX, mOffsetY;
 	Real mDragOriginX, mDragOriginY;
 	Real mCameraH, mCameraV;
+	Real mDistance;
 
 	bool mDragging, mFriction;
-	bool mRabbit;
+	bool mRabbit, mDebug;
 
 	Geometry* mGeom;
 };
