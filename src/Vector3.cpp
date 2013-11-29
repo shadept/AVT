@@ -114,12 +114,12 @@ Vector3 Vector3::operator ^(const Vector3& rhs) const
 	return Vector3(Y * rhs.Z - Z * rhs.Y, Z * rhs.X - X * rhs.Z, X * rhs.Y - Y * rhs.X);
 }
 
-const Real Vector3::operator [](unsigned int index) const
+const Real Vector3::operator [](int index) const
 {
 	return (&X)[index];
 }
 
-Real Vector3::operator [](unsigned int index)
+Real Vector3::operator [](int index)
 {
 	return (&X)[index];
 }

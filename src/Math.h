@@ -13,8 +13,8 @@ class Quaternion;
 namespace Math
 {
 
-const Real PI = 3.141592653589793238462643383279502884197;
-const Real epsilon = 1.0e-5;
+const Real PI = 3.141592653589793238462643383279502884197f;
+const Real epsilon = 1.0e-5f;
 
 Real abs(Real f);
 Real pow(Real b, Real p);

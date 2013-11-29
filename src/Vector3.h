@@ -42,8 +42,8 @@ public:
 	// cross product
 	Vector3 operator ^(const Vector3& rhs) const;
 
-	const Real operator [](unsigned int index) const;
-	Real operator [](unsigned int index);
+	const Real operator [](int index) const;
+	Real operator [](int index);
 
 	bool operator==(const Vector3& rhs) const;
 	bool operator!=(const Vector3& rhs) const;

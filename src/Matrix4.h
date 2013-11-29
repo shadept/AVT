@@ -49,10 +49,10 @@ public:
 	Matrix4 operator *(Real a) const;
 	Matrix4& operator *=(Real a);
 
-	const Real& operator [](unsigned int index) const;
-	Real& operator [](unsigned int index);
-	const Real& operator ()(unsigned int row, unsigned int col) const;
-	Real& operator ()(unsigned int row, unsigned int col);
+	const Real& operator [](int index) const;
+	Real& operator [](int index);
+	const Real& operator ()(int row, int col) const;
+	Real& operator ()(int row, int col);
 
 private:
 	Real m[16];

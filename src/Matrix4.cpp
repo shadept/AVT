@@ -330,12 +330,12 @@ Matrix4& Matrix4::operator *=(Real a)
 	return *this;
 }
 
-const Real& Matrix4::operator [](unsigned int index) const
+const Real& Matrix4::operator [](int index) const
 {
 	return m[index];
 }
 
-Real& Matrix4::operator [](unsigned int index)
+Real& Matrix4::operator [](int index)
 {
 	return m[index];
 }
@@ -345,12 +345,12 @@ Matrix4 operator *(Real a, const Matrix4& m)
 	return m * a;
 }
 
-const Real& Matrix4::operator ()(unsigned int row, unsigned int col) const
+const Real& Matrix4::operator ()(int row, int col) const
 {
 	return m[row * 4 + col];
 }
 
-Real& Matrix4::operator ()(unsigned int row, unsigned int col)
+Real& Matrix4::operator ()(int row, int col)
 {
 	return m[row * 4 + col];
 }

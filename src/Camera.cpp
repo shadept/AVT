@@ -1,5 +1,10 @@
 #include "Camera.h"
 
+#ifdef _MSC_VER
+#undef near
+#undef far
+#endif // _MSC_VER
+
 Camera::Camera()
 {
 	mIsDirty = true;
