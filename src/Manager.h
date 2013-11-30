@@ -2,6 +2,8 @@
 #define MANAGER_H_
 
 #include <algorithm>
+#include <cassert>
+#include <iostream>
 #include <stack>
 #include <string>
 #include <vector>
@@ -16,11 +18,12 @@ struct MatchPathSeparator
 	}
 };
 
+template<typename T>
 class Resource
 {
 public:
 	Resource(const Handle handle, const std::string& filename) :
-			mName(std::find_if(filename.rbegin(), filename.rend(), MatchPathSeparator()).base(), filename.end()), mFilename(filename), mHandle(handle)
+			mRaw(0), mName(std::find_if(filename.rbegin(), filename.rend(), MatchPathSeparator()).base(), filename.end()), mFilename(filename), mHandle(handle)
 	{
 	}
 	virtual ~Resource()
@@ -40,9 +43,20 @@ public:
 		return mHandle;
 	}
 
+	T* GetRaw()
+	{
+		return mRaw;
+	}
+
 //	void IncRef();
 //	void DecRef();
 //	unsigned int GetRefCount() const;
+
+	typedef T raw_type;
+
+	// internal use
+public:
+	T* mRaw;
 
 private:
 	std::string mName;
@@ -113,7 +127,7 @@ public:
 		mList[handle] = NULL;
 	}
 
-	Handle Add(const std::string& filename)
+	Handle Add(const std::string& filename, typename T::raw_type* raw = NULL)
 	{
 		if (filename.empty())
 		{
@@ -138,11 +152,21 @@ public:
 
 		T* resource = NULL;
 		std::cout << "[LOADING] " << filename << std::endl;
-		bool loaded = Loader::Load(&resource, handle, filename);
-		if (loaded)
-			std::cout << "[LOADED] " << filename << std::endl;
+		if (raw == NULL)
+		{
+			bool loaded = Loader::Load(&resource, handle, filename);
+			if (loaded)
+				std::cout << "[LOADED] " << filename << std::endl;
+			else
+				std::cout << "[ERROR] Failed to load " << filename << std::endl;
+		}
 		else
-			std::cout << "[ERROR] Failed to load " << filename << std::endl;
+		{
+			resource = new T(handle, filename);
+			resource->mRaw = raw;
+		}
+
+		assert(resource != NULL && "Failed to load resource");
 
 		if (available)
 			mList[handle] = resource;

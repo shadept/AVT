@@ -95,17 +95,12 @@ struct Uniform
 
 #include "Manager.h"
 
-struct ShaderResource: public Resource
+struct ShaderResource: public Resource<Program>
 {
 public:
-	ShaderResource(Handle handle, const std::string& filename) : Resource(handle, filename), mProgram(0) {};
-
-	Program* GetShader() { return mProgram; }
+	ShaderResource(Handle handle, const std::string& filename) : Resource(handle, filename) {};
 
 	friend struct ShaderLoader;
-
-private:
-	Program* mProgram;
 };
 
 #include <fstream>
@@ -114,11 +109,11 @@ std::string readFile(const std::string& filename);
 
 struct ShaderLoader
 {
-	static bool Load(ShaderResource** mesh, Handle handle, const std::string& filename)
+	static bool Load(ShaderResource** resource, Handle handle, const std::string& filename)
 	{
-		*mesh = new ShaderResource(handle, filename);
+		*resource = new ShaderResource(handle, filename);
 		Program* shader = new Program();
-		(*mesh)->mProgram = shader;
+		(*resource)->mRaw = shader;
 
 		VertexShader vs;
 		vs.Source(readFile(filename+".vert"));

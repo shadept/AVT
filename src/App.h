@@ -31,8 +31,9 @@ private:
 	Real mCameraH, mCameraV;
 	Real mDistance;
 
-	bool mDragging, mFriction;
+	bool mDragging, mFriction, mLightOnCamera;
 	bool mRabbit, mDebug;
+	int mMaterial;
 
 	Geometry* mGeom;
 };

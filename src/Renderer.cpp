@@ -2,17 +2,25 @@
 
 #include <iostream>
 
+#include "Camera.h"
 #include "Node.h"
 #include "Geometry.h"
-#include "Camera.h"
 
 std::string readFile(const std::string& filename);
 
 Renderer::Renderer() :
-		mShader(nullptr), mCamera(nullptr)
+		mShader(nullptr), mPickingShader(0), mCamera(nullptr)
 {
 	_frameCounter = 0;
 	mPicking = false;
+
+	mDefaultMaterial = new Material();
+	mDefaultMaterial->mAmbient = Vector3(1.0f, 0.0f, 1.0f);
+	mDefaultMaterial->mDiffuse = Vector3(1.0f, 0.0f, 1.0f);
+	mDefaultMaterial->mSpecular = Vector3(1.0f, 0.0f, 1.0f);
+	mDefaultMaterial->mShininess = 0.0f;
+
+	MaterialManager.Add("default", mDefaultMaterial);
 }
 
 Renderer::~Renderer()
@@ -133,6 +141,17 @@ void Renderer::Draw(const Geometry* geometry)
 	else
 	{
 		mShader->Use();
+		const Material* material = geometry->GetMaterial();
+		if (material == NULL)
+		{
+			material = mDefaultMaterial;
+		}
+		Uniform::Bind(*mShader, "MaterialAmbientColor", material->mAmbient);
+		Uniform::Bind(*mShader, "MaterialDiffuseColor",  material->mDiffuse);
+		Uniform::Bind(*mShader, "MaterialSpecularColor",  material->mSpecular);
+		Uniform::Bind(*mShader, "MaterialShininess",  material->mShininess * 128.0f);
+
+
 		checkOpenGLError("Failed to bind shader");
 		Uniform::Bind(*mShader, "NormalMatrix", NormalMatrix);
 		Uniform::Bind(*mShader, "ModelMatrix", ModelMatrix);

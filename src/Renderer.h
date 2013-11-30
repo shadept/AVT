@@ -6,6 +6,8 @@
 
 #include <list>
 
+#include "Material.h"
+
 // Forward delcaration
 class Spatial;
 class Node;
@@ -39,6 +41,7 @@ public:
 
 private:
 	const Program* mShader, *mPickingShader;
+	Material* mDefaultMaterial;
 	Camera* mCamera;
 	bool mPicking;
 

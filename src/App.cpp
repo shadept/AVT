@@ -13,27 +13,23 @@ App::App() :
 	mOffsetX = mOffsetY = 0;
 	mDragOriginX = mDragOriginY = 0.0f;
 	mDistance = 5.0f;
-	mDragging = mFriction = false;
+	mDragging = mFriction = mLightOnCamera = false;
 	mRabbit = true;
 	mDebug = false;
+	mMaterial = 0;
 
 	Handle h = -1;
 	h = ShaderManager.Add("./shaders/realistic");
 	ShaderManager.Add("./shaders/debug");
-	Program* shader = ShaderManager.GetElement(h)->GetShader();
+	Program* shader = ShaderManager.GetElement(h)->GetRaw();
 
 	Uniform::Bind(*shader, "LightPosition", Vector3(0.0f, 0.0f, 20.0f));
-	Uniform::Bind(*shader, "LightAmbientColor", Vector3(0.3f, 0.3f, 0.3f));
-	Uniform::Bind(*shader, "LightDiffuseColor", Vector3(0.9f, 0.9f, 0.9f));
-	Uniform::Bind(*shader, "LightSpecularColor", Vector3(0.9f, 0.9f, 0.9f));
-
-	Uniform::Bind(*shader, "MaterialAmbientColor", Vector3(0.3f, 0.3f, 0.3f));
-	Uniform::Bind(*shader, "MaterialDiffuseColor", Vector3(0.9f, 0.9f, 0.9f));
-	Uniform::Bind(*shader, "MaterialSpecularColor", Vector3(0.9f, 0.9f, 0.9f));
-	Uniform::Bind(*shader, "MaterialShininess", 256.0f);
+	Uniform::Bind(*shader, "LightAmbientColor", Vector3(0.1f, 0.1f, 0.1f));
+	Uniform::Bind(*shader, "LightDiffuseColor", Vector3(1.0f, 1.0f, 1.0f));
+	Uniform::Bind(*shader, "LightSpecularColor", Vector3(1.0f, 1.0f, 1.0f));
 
 	mCamera.SetLookAt(Vector3(0.0f, 0.0f, mDistance), Vector3::Zero);
-	mCamera.SetFustrum(40.0f, (float) 640 / 480, 1.0f, 20.0f);
+	mCamera.SetFustrum(35.0f, (float) 640 / 480, 1.0f, 20.0f);
 
 	mRenderer->Bind(shader);
 	mRenderer->SetCamera(&mCamera);
@@ -52,8 +48,31 @@ App::App() :
 	// faces: 483744
 	MeshManager.Add("./models/zerling.obj");
 
-	mGeom->SetMesh(MeshManager.GetElement(h)->GetMesh());
+	mGeom->SetMesh(MeshManager.GetElement(h)->GetRaw());
 	mGeom->LocalTransform.SetPosition(Vector3(0.0f, -1.0f, 0.0f));
+
+	Material* porcelainMaterial = new Material();
+	porcelainMaterial->mAmbient = Vector3(0.1f, 0.1f, 0.1f);
+	porcelainMaterial->mDiffuse = Vector3(1.0f, 1.0f, 1.0f);
+	porcelainMaterial->mSpecular = Vector3(1.0f, 1.0f, 1.0f);
+	porcelainMaterial->mShininess = 50.0f;
+	h = MaterialManager.Add("porcelain", porcelainMaterial);
+
+	Material* goldMaterial = new Material();
+	goldMaterial->mAmbient = Vector3(0.24725f, 0.1995f, 0.0745f);
+	goldMaterial->mDiffuse = Vector3(0.75164f, 0.60648f, 0.22648f);
+	goldMaterial->mSpecular = Vector3(0.628281f, 0.555802f, 0.366065f);
+	goldMaterial->mShininess = 0.4f;
+	MaterialManager.Add("gold", goldMaterial);
+
+	Material* chromeMaterial = new Material();
+	chromeMaterial->mAmbient = Vector3(0.25f, 0.25f, 0.25f);
+	chromeMaterial->mDiffuse = Vector3(0.4f, 0.4f, 0.4f);
+	chromeMaterial->mSpecular = Vector3(0.774597f, 0.774597f, 0.774597f);
+	chromeMaterial->mShininess = 0.6f;
+	MaterialManager.Add("chrome", chromeMaterial);
+
+	mGeom->SetMaterial(MaterialManager.GetElement(h)->GetRaw());
 
 	mWorld.AttachChild(mGeom);
 }
@@ -112,15 +131,27 @@ void App::OnMouseMotion(int x, int y)
 
 void App::OnKeyboard(unsigned char key, int x, int y)
 {
+	if (key == 'm')
+	{
+		switch(mMaterial)
+		{
+		case 0: mGeom->SetMaterial(MaterialManager.GetElement("gold")->GetRaw()); break;
+		case 1: mGeom->SetMaterial(MaterialManager.GetElement("chrome")->GetRaw()); break;
+		case 2: mGeom->SetMaterial(MaterialManager.GetElement("porcelain")->GetRaw()); break;
+		default: mGeom->SetMaterial(MaterialManager.GetElement("default")->GetRaw());
+		}
+		mMaterial = (mMaterial + 1) % 3;
+	}
+
 	if (key == 'c')
 	{
 		if (mRabbit)
 		{
-			mGeom->SetMesh(MeshManager.GetElement("./models/zerling.obj")->GetMesh());
+			mGeom->SetMesh(MeshManager.GetElement("./models/zerling.obj")->GetRaw());
 		}
 		else
 		{
-			mGeom->SetMesh(MeshManager.GetElement("./models/bunny_smooth.obj")->GetMesh());
+			mGeom->SetMesh(MeshManager.GetElement("./models/bunny_smooth.obj")->GetRaw());
 		}
 		mRabbit = !mRabbit;
 	}
@@ -129,17 +160,20 @@ void App::OnKeyboard(unsigned char key, int x, int y)
 	{
 		if (mDebug)
 		{
-			mRenderer->Bind(ShaderManager.GetElement("./shaders/realistic")->GetShader());
+			mRenderer->Bind(ShaderManager.GetElement("./shaders/realistic")->GetRaw());
 		}
 		else
 		{
-			mRenderer->Bind(ShaderManager.GetElement("./shaders/debug")->GetShader());
+			mRenderer->Bind(ShaderManager.GetElement("./shaders/debug")->GetRaw());
 		}
 		mDebug = !mDebug;
 	}
 
 	if (key == 'f')
 		mFriction = !mFriction;
+
+	if (key == 'l')
+		mLightOnCamera = !mLightOnCamera;
 
 	if (key == 'i')
 	{
@@ -153,7 +187,7 @@ void App::OnKeyboard(unsigned char key, int x, int y)
 void App::OnResize(int w, int h)
 {
 	float ratio = (float) w / h;
-	mCamera.SetFustrum(30.0f, ratio, 1.0f, 20.0f);
+	mCamera.SetFustrum(35.0f, ratio, 1.0f, 20.0f);
 }
 
 void App::OnUpdate(const Real delta)
@@ -178,6 +212,13 @@ void App::OnUpdate(const Real delta)
 	mCamera.LocalTransform.SetPosition(Vector3(0.0f, 0.0f, -mDistance));
 	mCamera.LocalTransform.Rotate(Quaternion::fromAxisAngle(mCamera.LocalTransform.Up(), offX * delta));
 	mCamera.LocalTransform.Rotate(Quaternion::fromAxisAngle(mCamera.LocalTransform.Side(), offY * delta));
+
+	if (mLightOnCamera)
+	{
+		Vector3 v = mCamera.LocalTransform.Orientation() * mCamera.LocalTransform.Position();
+		v.Z = -v.Z; // FIXME negating Z coord a lot, is this correct?
+		Uniform::Bind(*ShaderManager.GetElement("./shaders/realistic")->GetRaw(), "LightPosition", v);
+	}
 
 	// friction baby!
 	if (!mDragging)

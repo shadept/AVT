@@ -62,31 +62,26 @@ private:
 
 #include "Manager.h"
 
-struct MeshResource: public Resource
+struct MeshResource: public Resource<Mesh>
 {
 public:
-	MeshResource(Handle handle, const std::string& filename) : Resource(handle, filename), mMesh(0) {};
-
-	Mesh* GetMesh() { return mMesh; }
+	MeshResource(Handle handle, const std::string& filename) : Resource(handle, filename) {};
 
 	friend struct MeshLoader;
-
-private:
-	Mesh* mMesh;
 };
 
 #include <fstream>
 
 struct MeshLoader
 {
-	static bool  Load(MeshResource** mesh, Handle handle, const std::string& filename)
+	static bool  Load(MeshResource** resource, Handle handle, const std::string& filename)
 	{
-		*mesh = new MeshResource(handle, filename);
-		(*mesh)->mMesh = new Mesh();
+		*resource = new MeshResource(handle, filename);
+		(*resource)->mRaw = new Mesh();
 
 		std::ifstream file(filename);
 		if(file.is_open()) {
-			(*mesh)->mMesh->Load(file);
+			(*resource)->mRaw->Load(file);
 			return true;
 		}
 		return false;

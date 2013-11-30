@@ -1,7 +1,7 @@
 #include "Geometry.h"
 
-Geometry::Geometry(const Mesh* mesh) :
-		mMesh(mesh)
+Geometry::Geometry(const Mesh* mesh, const Material* material) :
+		mMesh(mesh), mMaterial(material)
 {
 }
 
