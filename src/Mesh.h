@@ -35,10 +35,24 @@ struct VertexAttrib
 		NX = n.x;
 		NY = n.y;
 		NZ = n.z;
+		U = V = 0.0f;
+	}
+
+	VertexAttrib(Vertice v, Normal n, TexCoords t)
+	{
+		X = v.x;
+		Y = v.y;
+		Z = v.z;
+		NX = n.x;
+		NY = n.y;
+		NZ = n.z;
+		U = t.u;
+		V = t.v;
 	}
 
 	float X, Y, Z;
 	float NX, NY, NZ;
+	float U, V;
 };
 
 class Mesh
@@ -74,7 +88,7 @@ public:
 
 struct MeshLoader
 {
-	static bool  Load(MeshResource** resource, Handle handle, const std::string& filename)
+	static bool Load(MeshResource** resource, Handle handle, const std::string& filename)
 	{
 		*resource = new MeshResource(handle, filename);
 		(*resource)->mRaw = new Mesh();

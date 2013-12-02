@@ -1,6 +1,7 @@
 #ifndef MATERIAL_H_
 #define MATERIAL_H_
 
+#include "Texture.h"
 #include "Vector3.h"
 
 class Material
@@ -13,6 +14,7 @@ public:
 	Vector3 mAmbient;
 	Vector3 mDiffuse;
 	Vector3 mSpecular;
+	Texture* mTexture;
 	float mShininess;
 };
 

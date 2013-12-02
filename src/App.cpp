@@ -13,7 +13,7 @@ App::App() :
 	mOffsetX = mOffsetY = 0;
 	mDragOriginX = mDragOriginY = 0.0f;
 	mDistance = 5.0f;
-	mDragging = mFriction = mLightOnCamera = false;
+	mDragging = mFriction = false;
 	mRabbit = true;
 	mDebug = false;
 	mMaterial = 0;
@@ -42,7 +42,7 @@ App::App() :
 
 	// verts: 2503
 	// faces: 4968
-	MeshManager.Add("./models/bunny_flat.obj");
+//	MeshManager.Add("./models/bunny_flat.obj");
 
 	// verts: 242841
 	// faces: 483744
@@ -51,12 +51,23 @@ App::App() :
 	mGeom->SetMesh(MeshManager.GetElement(h)->GetRaw());
 	mGeom->LocalTransform.SetPosition(Vector3(0.0f, -1.0f, 0.0f));
 
+	h = TextureManager.Add("./textures/bunny.png");
+
+
+	Material* bunnyMaterial = new Material();
+	bunnyMaterial->mAmbient = Vector3(0.1f, 0.1f, 0.1f);
+	bunnyMaterial->mDiffuse = Vector3(1.0f, 1.0f, 1.0f);
+	bunnyMaterial->mSpecular = Vector3(1.0f, 1.0f, 1.0f);
+	bunnyMaterial->mShininess = 50.0f;
+	bunnyMaterial->mTexture = TextureManager.GetElement(h)->GetRaw();
+	h = MaterialManager.Add("bunny", bunnyMaterial);
+
 	Material* porcelainMaterial = new Material();
 	porcelainMaterial->mAmbient = Vector3(0.1f, 0.1f, 0.1f);
 	porcelainMaterial->mDiffuse = Vector3(1.0f, 1.0f, 1.0f);
 	porcelainMaterial->mSpecular = Vector3(1.0f, 1.0f, 1.0f);
 	porcelainMaterial->mShininess = 50.0f;
-	h = MaterialManager.Add("porcelain", porcelainMaterial);
+	MaterialManager.Add("porcelain", porcelainMaterial);
 
 	Material* goldMaterial = new Material();
 	goldMaterial->mAmbient = Vector3(0.24725f, 0.1995f, 0.0745f);
@@ -143,6 +154,9 @@ void App::OnKeyboard(unsigned char key, int x, int y)
 		mMaterial = (mMaterial + 1) % 3;
 	}
 
+	if (key == 'b')
+		mGeom->SetMaterial(MaterialManager.GetElement("bunny")->GetRaw());
+
 	if (key == 'c')
 	{
 		if (mRabbit)
@@ -171,9 +185,6 @@ void App::OnKeyboard(unsigned char key, int x, int y)
 
 	if (key == 'f')
 		mFriction = !mFriction;
-
-	if (key == 'l')
-		mLightOnCamera = !mLightOnCamera;
 
 	if (key == 'i')
 	{
@@ -212,13 +223,6 @@ void App::OnUpdate(const Real delta)
 	mCamera.LocalTransform.SetPosition(Vector3(0.0f, 0.0f, -mDistance));
 	mCamera.LocalTransform.Rotate(Quaternion::fromAxisAngle(mCamera.LocalTransform.Up(), offX * delta));
 	mCamera.LocalTransform.Rotate(Quaternion::fromAxisAngle(mCamera.LocalTransform.Side(), offY * delta));
-
-	if (mLightOnCamera)
-	{
-		Vector3 v = mCamera.LocalTransform.Orientation() * mCamera.LocalTransform.Position();
-		v.Z = -v.Z; // FIXME negating Z coord a lot, is this correct?
-		Uniform::Bind(*ShaderManager.GetElement("./shaders/realistic")->GetRaw(), "LightPosition", v);
-	}
 
 	// friction baby!
 	if (!mDragging)

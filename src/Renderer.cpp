@@ -115,6 +115,7 @@ void Renderer::DrawScene(Node* scene)
 void Renderer::Draw(const Geometry* geometry)
 {
 	assert(mCamera && "Renderer must have a camera attached");
+	checkOpenGLError("Failed somewhere else");
 
 	geometry->GetMesh()->Bind();
 	checkOpenGLError("Failed to bind mesh");
@@ -146,19 +147,31 @@ void Renderer::Draw(const Geometry* geometry)
 		{
 			material = mDefaultMaterial;
 		}
+		if (material->mTexture != NULL)
+		{
+			material->mTexture->Bind();
+			glUniform1i((*mShader)["MaterialHasTexture"], GL_TRUE);
+		}
+		else
+		{
+			glUniform1i((*mShader)["MaterialHasTexture"], GL_FALSE);
+		}
+		glUniform1i((*mShader)["MaterialTexture"], 0); // GL_TEXTURE0
 		Uniform::Bind(*mShader, "MaterialAmbientColor", material->mAmbient);
 		Uniform::Bind(*mShader, "MaterialDiffuseColor",  material->mDiffuse);
 		Uniform::Bind(*mShader, "MaterialSpecularColor",  material->mSpecular);
 		Uniform::Bind(*mShader, "MaterialShininess",  material->mShininess * 128.0f);
+		checkOpenGLError("Failed to bind material");
 
 
-		checkOpenGLError("Failed to bind shader");
+//		checkOpenGLError("Failed to bind shader");
 		Uniform::Bind(*mShader, "NormalMatrix", NormalMatrix);
 		Uniform::Bind(*mShader, "ModelMatrix", ModelMatrix);
 		Uniform::Bind(*mShader, "ViewMatrix", ViewMatrix);
 		Uniform::Bind(*mShader, "ProjectionMatrix", ProjectionMatrix);
 		Uniform::Bind(*mShader, "ModelViewMatrix", ModelViewMatrix);
 		Uniform::Bind(*mShader, "ModelViewProjectionMatrix", ModelViewProjectionMatrix);
+		checkOpenGLError("Failed to bind matrixes");
 	}
 
 	glDrawArrays(GL_TRIANGLES, 0, geometry->GetMesh()->GetCount());

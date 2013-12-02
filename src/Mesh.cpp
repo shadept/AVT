@@ -92,13 +92,24 @@ void Mesh::Load(std::istream& input)
 
 	for (auto& f : faces)
 	{
-		VertexAttrib v0(vertices[f.v[0] - 1], normals[f.vn[0] - 1]);
-		VertexAttrib v1(vertices[f.v[1] - 1], normals[f.vn[1] - 1]);
-		VertexAttrib v2(vertices[f.v[2] - 1], normals[f.vn[2] - 1]);
-
-		mVertices.push_back(v0);
-		mVertices.push_back(v1);
-		mVertices.push_back(v2);
+		if (uvs.size() > 0)
+		{
+			VertexAttrib v0(vertices[f.v[0] - 1], normals[f.vn[0] - 1], uvs[f.vt[0] - 1]);
+			VertexAttrib v1(vertices[f.v[1] - 1], normals[f.vn[1] - 1], uvs[f.vt[1] - 1]);
+			VertexAttrib v2(vertices[f.v[2] - 1], normals[f.vn[2] - 1], uvs[f.vt[2] - 1]);
+			mVertices.push_back(v0);
+			mVertices.push_back(v1);
+			mVertices.push_back(v2);
+		}
+		else
+		{
+			VertexAttrib v0(vertices[f.v[0] - 1], normals[f.vn[0] - 1]);
+			VertexAttrib v1(vertices[f.v[1] - 1], normals[f.vn[1] - 1]);
+			VertexAttrib v2(vertices[f.v[2] - 1], normals[f.vn[2] - 1]);
+			mVertices.push_back(v0);
+			mVertices.push_back(v1);
+			mVertices.push_back(v2);
+		}
 	}
 
 	glGenBuffers(1, &mVertexBufferId);
@@ -112,6 +123,10 @@ void Mesh::Load(std::istream& input)
 
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(VertexAttrib), (GLvoid*) sizeof(Vertice));
+
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(VertexAttrib), (GLvoid*)(sizeof(Vertice) + sizeof(Normal)));
+	checkOpenGLError("Failed to enable vertex attributes");
 
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);

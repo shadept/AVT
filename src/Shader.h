@@ -126,6 +126,7 @@ struct ShaderLoader
 		shader->AttachShader(vs).AttachShader(fs);
 		shader->BindAttribute(VertexAttributes::POSITION, "in_Position");
 		shader->BindAttribute(VertexAttributes::NORMAL, "in_Normal");
+		shader->BindAttribute(VertexAttributes::TEXCOORD, "in_TexCoords");
 		shader->Link();
 
 		return true;
