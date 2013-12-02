@@ -20,25 +20,7 @@ public:
 
 #include "Manager.h"
 
-struct MaterialResource : public Resource<Material>
-{
-public:
-	MaterialResource(Handle handle, const std::string& filename) : Resource(handle, filename) {};
-
-	friend struct MaterialLoader;
-};
-
-struct MaterialLoader
-{
-	static bool Load(MaterialResource** resource, Handle handle, const std::string& filename)
-	{
-		*resource = new MaterialResource(handle, filename);
-		(*resource)->mRaw = new Material();
-
-		return true;
-	}
-};
-
-extern ResourceManager<MaterialResource, MaterialLoader> MaterialManager;
+DECLARE_RESOURCE_AND_LOADER(Material);
+DECLARE_MANAGER(Material);
 
 #endif /* MATERIAL_H_ */

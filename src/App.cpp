@@ -19,8 +19,8 @@ App::App() :
 	mMaterial = 0;
 
 	Handle h = -1;
-	h = ShaderManager.Add("./shaders/realistic");
-	ShaderManager.Add("./shaders/debug");
+	h = ShaderManager.Load("realistic", "./shaders/realistic.vert", "./shaders/realistic.frag");
+	ShaderManager.Load("debug", "./shaders/debug.vert", "./shaders/debug.frag");
 	Program* shader = ShaderManager.GetElement(h)->GetRaw();
 
 	Uniform::Bind(*shader, "LightPosition", Vector3(0.0f, 0.0f, 20.0f));
@@ -38,7 +38,7 @@ App::App() :
 
 	// verts: 2503
 	// faces: 4968
-	h = MeshManager.Add("./models/bunny_smooth.obj");
+	h = MeshManager.Load("bunny_smooth", "./models/bunny_smooth.obj");
 
 	// verts: 2503
 	// faces: 4968
@@ -46,13 +46,12 @@ App::App() :
 
 	// verts: 242841
 	// faces: 483744
-	MeshManager.Add("./models/zerling.obj");
+	MeshManager.Load("zerling", "./models/zerling.obj");
 
 	mGeom->SetMesh(MeshManager.GetElement(h)->GetRaw());
 	mGeom->LocalTransform.SetPosition(Vector3(0.0f, -1.0f, 0.0f));
 
-	h = TextureManager.Add("./textures/bunny.png");
-
+	h = TextureManager.Load("bunny", "./textures/bunny.png");
 
 	Material* bunnyMaterial = new Material();
 	bunnyMaterial->mAmbient = Vector3(0.1f, 0.1f, 0.1f);
@@ -161,11 +160,11 @@ void App::OnKeyboard(unsigned char key, int x, int y)
 	{
 		if (mRabbit)
 		{
-			mGeom->SetMesh(MeshManager.GetElement("./models/zerling.obj")->GetRaw());
+			mGeom->SetMesh(MeshManager.GetElement("zerling")->GetRaw());
 		}
 		else
 		{
-			mGeom->SetMesh(MeshManager.GetElement("./models/bunny_smooth.obj")->GetRaw());
+			mGeom->SetMesh(MeshManager.GetElement("bunny_smooth")->GetRaw());
 		}
 		mRabbit = !mRabbit;
 	}
@@ -174,11 +173,11 @@ void App::OnKeyboard(unsigned char key, int x, int y)
 	{
 		if (mDebug)
 		{
-			mRenderer->Bind(ShaderManager.GetElement("./shaders/realistic")->GetRaw());
+			mRenderer->Bind(ShaderManager.GetElement("realistic")->GetRaw());
 		}
 		else
 		{
-			mRenderer->Bind(ShaderManager.GetElement("./shaders/debug")->GetRaw());
+			mRenderer->Bind(ShaderManager.GetElement("debug")->GetRaw());
 		}
 		mDebug = !mDebug;
 	}

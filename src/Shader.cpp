@@ -1,9 +1,12 @@
 #include "Shader.h"
 
 #include <cassert>
+#include <fstream>
 #include <iostream>
 
-ResourceManager<ShaderResource, ShaderLoader> ShaderManager;
+#include "Logger.h"
+
+IMPLEMENT_MANAGER(Shader);
 
 Shader::Shader(ShaderType type)
 {
@@ -65,7 +68,8 @@ GLint Program::operator ()(const std::string& attribute) const
 	{
 		GLint location = glGetAttribLocation(mProgram, attribute.c_str());
 //		assert(location != -1 && "Uniform not in shader");
-		if (location == -1) std::cout << "Warning: Attribute " << attribute << " location not found." << std::endl;
+		if (location == -1)
+			Logger::Warning << "Attribute " << attribute << " location not found." << Logger::endl;
 //		else std::cout << "Attribute " << attribute << " location: " << location << std::endl;
 		mAttributes[attribute] = location;
 		return location;
@@ -81,7 +85,8 @@ GLint Program::operator [](const std::string& uniform) const
 	{
 		GLint location = glGetUniformLocation(mProgram, uniform.c_str());
 //		assert(location != -1 && "Uniform not in shader");
-		if (location == -1) std::cout << "Warning: Uniform " << uniform << " location not found." << std::endl;
+		if (location == -1)
+			Logger::Warning << "Uniform " << uniform << " location not found." << Logger::endl;
 //		else std::cout << "Uniform " << uniform << " location: " << location << std::endl;
 		mUniforms[uniform] = location;
 		return location;
@@ -196,4 +201,29 @@ void Uniform::Bind(const Program& program, const std::string& name, const Vector
 		}
 	}
 	checkOpenGLError("Failed to bind uniform " + name);
+}
+
+std::string readFile(const std::string& filename);
+
+bool ShaderLoader::Load(ShaderResource** resource, Handle handle, const std::string& filename1, const std::string& filename2)
+{
+	*resource = new ShaderResource(handle, filename1);
+	Program* shader = new Program();
+	(*resource)->mRaw = shader;
+
+	VertexShader vs;
+	vs.Source(readFile(filename1));
+	vs.Compile();
+
+	FragmentShader fs;
+	fs.Source(readFile(filename2));
+	fs.Compile();
+
+	shader->AttachShader(vs).AttachShader(fs);
+	shader->BindAttribute(VertexAttributes::POSITION, "in_Position");
+	shader->BindAttribute(VertexAttributes::NORMAL, "in_Normal");
+	shader->BindAttribute(VertexAttributes::TEXCOORD, "in_TexCoords");
+	shader->Link();
+
+	return true;
 }

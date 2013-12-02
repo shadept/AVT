@@ -95,44 +95,13 @@ struct Uniform
 
 #include "Manager.h"
 
-struct ShaderResource: public Resource<Program>
-{
-public:
-	ShaderResource(Handle handle, const std::string& filename) : Resource(handle, filename) {};
-
-	friend struct ShaderLoader;
-};
-
-#include <fstream>
-
-std::string readFile(const std::string& filename);
+DECLARE_RESOURCE_(Shader, Program);
 
 struct ShaderLoader
 {
-	static bool Load(ShaderResource** resource, Handle handle, const std::string& filename)
-	{
-		*resource = new ShaderResource(handle, filename);
-		Program* shader = new Program();
-		(*resource)->mRaw = shader;
-
-		VertexShader vs;
-		vs.Source(readFile(filename+".vert"));
-		vs.Compile();
-
-		FragmentShader fs;
-		fs.Source(readFile(filename+".frag"));
-		fs.Compile();
-
-		shader->AttachShader(vs).AttachShader(fs);
-		shader->BindAttribute(VertexAttributes::POSITION, "in_Position");
-		shader->BindAttribute(VertexAttributes::NORMAL, "in_Normal");
-		shader->BindAttribute(VertexAttributes::TEXCOORD, "in_TexCoords");
-		shader->Link();
-
-		return true;
-	}
+	static bool Load(ShaderResource** resource, Handle handle, const std::string& filename1, const std::string& filename2);
 };
 
-extern ResourceManager<ShaderResource, ShaderLoader> ShaderManager;
+DECLARE_MANAGER(Shader);
 
 #endif /* SHADER_H_ */

@@ -76,32 +76,7 @@ private:
 
 #include "Manager.h"
 
-struct MeshResource: public Resource<Mesh>
-{
-public:
-	MeshResource(Handle handle, const std::string& filename) : Resource(handle, filename) {};
-
-	friend struct MeshLoader;
-};
-
-#include <fstream>
-
-struct MeshLoader
-{
-	static bool Load(MeshResource** resource, Handle handle, const std::string& filename)
-	{
-		*resource = new MeshResource(handle, filename);
-		(*resource)->mRaw = new Mesh();
-
-		std::ifstream file(filename);
-		if(file.is_open()) {
-			(*resource)->mRaw->Load(file);
-			return true;
-		}
-		return false;
-	}
-};
-
-extern ResourceManager<MeshResource, MeshLoader> MeshManager;
+DECLARE_RESOURCE_AND_LOADER(Mesh);
+DECLARE_MANAGER(Mesh);
 
 #endif /* MESH_H_ */

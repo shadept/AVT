@@ -19,34 +19,14 @@ public:
 	void Unbind() const;
 
 private:
-	GLuint mTextureId;
+	GLuint mTextureId = 0;
 	unsigned mWidth = 0;
 	unsigned mHeight = 0;
 };
 
 #include "Manager.h"
 
-struct TextureResource : public Resource<Texture>
-{
-public:
-	TextureResource(Handle handle, const std::string& filename) : Resource(handle, filename) {};
-
-	friend struct TextureLoader;
-};
-
-struct TextureLoader
-{
-	static bool Load(TextureResource** resource, Handle handle, const std::string& filename)
-	{
-		*resource = new TextureResource(handle, filename);
-		(*resource)->mRaw = new Texture();
-
-		(*resource)->mRaw->Load(filename);
-
-		return true;
-	}
-};
-
-extern ResourceManager<TextureResource, TextureLoader> TextureManager;
+DECLARE_RESOURCE_AND_LOADER(Texture);
+DECLARE_MANAGER(Texture);
 
 #endif /* TEXTURE_H_ */

@@ -23,16 +23,11 @@ if(CMAKE_BUILD_TYPE STREQUAL "")
 	set(CMAKE_BUILD_TYPE Debug)
 endif()
 
-set(SOIL "${CMAKE_SOURCE_DIR}/dependencies/Simple OpenGL Image Library")
-
-include_directories(${SOIL}/src)
-
-set(LIBSOIL "dependencies/Simple OpenGL Image Library/lib/libSOIL.a")
 file(GLOB AVT_SOURCES src/*.cpp)
 file(GLOB AVT_HEADERS src/*.h)
 file(COPY shaders/ DESTINATION shaders/)
 file(COPY models/ DESTINATION models/)
+file(COPY textures/ DESTINATION textures/)
 
-link_directories(${SOIL}/lib)
 add_executable(${PROJECT_NAME} ${AVT_SOURCES} ${AVT_HEADERS})
-target_link_libraries(${PROJECT_NAME} -lstdc++ -lm -lglut -lGLU -lGL -lGLEW -lSOIL)
+target_link_libraries(${PROJECT_NAME} -lstdc++ -lm -lglut -lGLU -lGL -lGLEW)

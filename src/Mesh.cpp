@@ -1,9 +1,10 @@
 #include "Mesh.h"
 
 #include <cassert>
+#include <fstream>
 #include <sstream>
 
-ResourceManager<MeshResource, MeshLoader> MeshManager;
+IMPLEMENT_MANAGER(Mesh);
 
 void LoadMesh(std::istream& input, std::vector<Vertice>& vertices, std::vector<TexCoords>& uvs, std::vector<Normal>& normals, std::vector<Face>& faces)
 {
@@ -146,4 +147,17 @@ void Mesh::Bind() const
 void Mesh::Unbind() const
 {
 	glBindVertexArray(0);
+}
+
+bool MeshLoader::Load(MeshResource** resource, Handle handle, const std::string& filename)
+{
+	*resource = new MeshResource(handle, filename);
+	(*resource)->mRaw = new Mesh();
+
+	std::ifstream file(filename);
+	if(file.is_open()) {
+		(*resource)->mRaw->Load(file);
+		return true;
+	}
+	return false;
 }

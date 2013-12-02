@@ -3,10 +3,9 @@
 #include "lodepng.h"
 #include <cassert>
 
-ResourceManager<TextureResource, TextureLoader> TextureManager;
+IMPLEMENT_MANAGER(Texture);
 
-Texture::Texture() :
-		mTextureId(0)
+Texture::Texture()
 {
 }
 
@@ -92,4 +91,14 @@ void Texture::Unbind() const
 {
 	glBindTexture(GL_TEXTURE_2D, 0);
 	checkOpenGLError("Failed to unbind texture");
+}
+
+bool TextureLoader::Load(TextureResource** resource, Handle handle, const std::string& filename)
+{
+	*resource = new TextureResource(handle, filename);
+	(*resource)->mRaw = new Texture();
+
+	(*resource)->mRaw->Load(filename);
+
+	return true;
 }

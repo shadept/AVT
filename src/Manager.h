@@ -1,52 +1,26 @@
 #ifndef MANAGER_H_
 #define MANAGER_H_
 
-#include <algorithm>
-#include <cassert>
-#include <iostream>
 #include <stack>
 #include <string>
+#include <utility>
 #include <vector>
 
-typedef unsigned int Handle;
+#include "Logger.h"
 
-struct MatchPathSeparator
-{
-	bool operator()(char ch) const
-	{
-		return ch == '/';
-	}
-};
+typedef unsigned int Handle;
 
 template<typename T>
 class Resource
 {
 public:
-	Resource(const Handle handle, const std::string& filename) :
-			mRaw(0), mName(std::find_if(filename.rbegin(), filename.rend(), MatchPathSeparator()).base(), filename.end()), mFilename(filename), mHandle(handle)
-	{
-	}
-	virtual ~Resource()
-	{
-	}
+	Resource(const Handle handle, const std::string& filename);
+	virtual ~Resource();
 
-	std::string GetName()
-	{
-		return mName;
-	}
-	std::string GetFilename()
-	{
-		return mFilename;
-	}
-	Handle GetHandle()
-	{
-		return mHandle;
-	}
-
-	T* GetRaw()
-	{
-		return mRaw;
-	}
+	std::string GetName();
+	std::string GetFilename();
+	Handle GetHandle();
+	T* GetRaw();
 
 //	void IncRef();
 //	void DecRef();
@@ -56,136 +30,66 @@ public:
 
 	// internal use
 public:
-	T* mRaw;
+	T* mRaw = NULL;
+	std::string mName;
 
 private:
-	std::string mName;
 	std::string mFilename;
 	std::string mPath;
-	Handle mHandle;
+	Handle mHandle = 0;
 //	unsigned int mRefCount;
 };
 
+#define DECLARE_RESOURCE(C) \
+	struct C##Resource : public Resource<C> { \
+		C##Resource(Handle handle, const std::string& filename) : Resource(handle, filename) {};\
+		friend struct C##Loader;\
+	}
+
+#define DECLARE_RESOURCE_(C, B) \
+	struct C##Resource : public Resource<B> { \
+		C##Resource(Handle handle, const std::string& filename) : Resource(handle, filename) {};\
+		friend struct C##Loader;\
+	}
+
+#define DECLARE_LOADER(C)\
+	struct C##Loader {\
+		static bool Load(C##Resource** resource, Handle handle, const std::string& filename);\
+	}
+
+#define DECLARE_RESOURCE_AND_LOADER(C) DECLARE_RESOURCE(C); DECLARE_LOADER(C)
+#define DECLARE_RESOURCE_AND_LOADER_(C, B) DECLARE_RESOURCE_(C, B); DECLARE_LOADER(C)
+
 #define SAFE_DELETE(p) { if(p) { delete (p); (p) = NULL; } }
 
-template<typename T, typename Loader>
+template<typename Resource, typename Loader>
 class ResourceManager
 {
 public:
-	ResourceManager()
-	{
-	}
+	ResourceManager();
+	~ResourceManager();
 
-	~ResourceManager()
-	{
-		EmptyList();
-	}
+	Resource* operator[](const std::string& name);
+	Resource* operator[](Handle handle);
 
-	T* GetElement(const std::string& name)
-	{
-		if (name.empty())
-		{
-			return NULL;
-		}
+	Resource* GetElement(const std::string& name);
+	Resource* GetElement(Handle handle);
 
-		for (auto* p : mList)
-		{
-			if (p != NULL)
-				if (p->GetFilename() == name)
-					return p;
-		}
+	void EmptyList();
 
-		return NULL;
-	}
-
-	T* GetElement(Handle handle)
-	{
-		if (handle < mList.size() && handle >= 0)
-			return mList[handle];
-		return NULL;
-	}
-
-	void EmptyList()
-	{
-		for (auto* p : mList)
-			SAFE_DELETE(p);
-
-		while (!mHandles.empty())
-			mHandles.pop();
-
-		mList.clear();
-	}
-
-	void Remove(Handle handle)
-	{
-		if (handle < 0 || handle >= mList.size() || mList[handle] == NULL)
-			return;
-
-		T* resource = mList[handle];
-		mHandles.push(handle);
-		delete resource;
-		mList[handle] = NULL;
-	}
-
-	Handle Add(const std::string& filename, typename T::raw_type* raw = NULL)
-	{
-		if (filename.empty())
-		{
-			return -1;
-		}
-
-		T* element = GetElement(filename);
-		if (element != NULL)
-		{
-			return element->GetHandle();
-		}
-
-		bool available = !mHandles.empty();
-		unsigned int handle;
-		if (available)
-		{
-			handle = mHandles.top();
-			mHandles.pop();
-		}
-		else
-			handle = mList.size();
-
-		T* resource = NULL;
-		std::cout << "[LOADING] " << filename << std::endl;
-		if (raw == NULL)
-		{
-			bool loaded = Loader::Load(&resource, handle, filename);
-			if (loaded)
-				std::cout << "[LOADED] " << filename << std::endl;
-			else
-				std::cout << "[ERROR] Failed to load " << filename << std::endl;
-		}
-		else
-		{
-			resource = new T(handle, filename);
-			resource->mRaw = raw;
-		}
-
-		assert(resource != NULL && "Failed to load resource");
-
-		if (available)
-			mList[handle] = resource;
-		else
-			mList.push_back(resource);
-
-		return handle;
-	}
-
-	T* operator[](Handle handle)
-	{
-		if (handle < mList.size() && handle >= 0)
-			return mList[handle];
-		return NULL;
-	}
+	template<typename... Filename>
+	Handle Load(const std::string& name, const std::string& filename, Filename... filenames);
+	Handle Add(const std::string& name, typename Resource::raw_type* raw);
+	void Remove(Handle handle);
 
 private:
 	std::stack<Handle> mHandles;
-	std::vector<T*> mList;
+	std::vector<Resource*> mList;
 };
+
+#define DECLARE_MANAGER(C) extern ResourceManager<C##Resource, C##Loader> C##Manager
+#define IMPLEMENT_MANAGER(C) ResourceManager<C##Resource, C##Loader> C##Manager
+
+#include "Manager.inl"
 
 #endif // MANAGER_H_
