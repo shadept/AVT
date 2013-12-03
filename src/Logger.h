@@ -1,6 +1,10 @@
 #ifndef LOGGER_H_
 #define LOGGER_H_
 
+#ifdef _MSC_VER
+#undef ERROR
+#endif // _MSC_VER
+
 #include <iostream>
 
 namespace Logger

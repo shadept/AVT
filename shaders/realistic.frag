@@ -41,7 +41,7 @@ void main(void)
 	vec3 ambient = LightAmbientColor * MaterialAmbientColor;
 
 	float NdotL = clamp(dot(N, L), 0.0, 1.0);
-	vec3 textureDiffuse = texture(MaterialTexture, vec2(exTexCoords.x, -exTexCoords.y)); // y-inverted
+	vec3 textureDiffuse = vec3(texture(MaterialTexture, vec2(exTexCoords.x, -exTexCoords.y)).rgb); // y-inverted
 	vec3 diffuse = vec3(0.0);
 	if (MaterialHasTexture)
 		diffuse = LightDiffuseColor * textureDiffuse * NdotL;

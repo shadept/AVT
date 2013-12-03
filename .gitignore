@@ -1,10 +1,14 @@
 build/
 Debug/
 Release/
+textures/*.db
 vs/*.sdf
+vs/*.suo
+vs/*.opensdf
 vs/Debug
 vs/Release
 vs/assignment/Debug
 vs/assignment/Release
+vs/assignment/textures/*.db
 .cproject
 .project
