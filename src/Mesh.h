@@ -6,62 +6,53 @@
 
 #include "OpenGL.h"
 
-struct Vertice
-{
-	float x, y, z;
-};
+class Mesh;
 
-struct TexCoords
+struct MeshParser
 {
-	float u, v;
-};
-
-typedef Vertice Normal;
-
-struct Face
-{
-	unsigned int v[3];
-	unsigned int vt[3];
-	unsigned int vn[3];
-};
-
-struct VertexAttrib
-{
-	VertexAttrib(Vertice v, Normal n)
+	struct Vertice
 	{
-		X = v.x;
-		Y = v.y;
-		Z = v.z;
-		NX = n.x;
-		NY = n.y;
-		NZ = n.z;
-		U = V = 0.0f;
-	}
+		float x, y, z;
+	};
 
-	VertexAttrib(Vertice v, Normal n, TexCoords t)
+	struct TexCoords
 	{
-		X = v.x;
-		Y = v.y;
-		Z = v.z;
-		NX = n.x;
-		NY = n.y;
-		NZ = n.z;
-		U = t.u;
-		V = t.v;
-	}
+		float u, v;
+	};
 
-	float X, Y, Z;
-	float NX, NY, NZ;
-	float U, V;
+	typedef Vertice Normal;
+
+	struct Face
+	{
+		unsigned int v[3];
+		unsigned int vt[3];
+		unsigned int vn[3];
+	};
+
+	static void Load(Mesh* mesh, std::istream& input);
 };
 
 class Mesh
 {
 public:
+	typedef MeshParser::Vertice Vertice;
+	typedef MeshParser::Normal Normal;
+	typedef MeshParser::TexCoords TexCoords;
+
+	struct Vertex
+	{
+		Vertex(Vertice v, Normal n);
+		Vertex(Vertice v, Normal n, TexCoords t);
+
+		float X, Y, Z;
+		float NX, NY, NZ;
+		float U, V;
+	};
+
 	Mesh();
 	~Mesh();
 
-	void Load(std::istream& input);
+	void Load(std::vector<Vertex> vertexData);
 
 	int GetCount() const;
 
@@ -70,7 +61,7 @@ public:
 
 private:
 	GLuint mVertexArrayId, mVertexBufferId;
-	std::vector<VertexAttrib> mVertices;
+//	std::vector<Vertex> mVertices;
 	int mCount;
 };
 

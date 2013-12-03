@@ -3,6 +3,18 @@
 
 #include "OpenGL.h"
 
+class Texture;
+
+struct TextureParser
+{
+	struct TextureDefinition
+	{
+
+	};
+
+	static void Load(Texture* mesh, std::istream& input);
+};
+
 class Texture
 {
 public:

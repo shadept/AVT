@@ -21,7 +21,7 @@ App::App() :
 	Handle h = -1;
 	h = ShaderManager.Load("realistic", "./shaders/realistic.vert", "./shaders/realistic.frag");
 	ShaderManager.Load("debug", "./shaders/debug.vert", "./shaders/debug.frag");
-	Program* shader = ShaderManager.GetElement(h)->GetRaw();
+	Program* shader = ShaderManager[h]->GetRaw();
 
 	Uniform::Bind(*shader, "LightPosition", Vector3(0.0f, 0.0f, 20.0f));
 	Uniform::Bind(*shader, "LightAmbientColor", Vector3(0.1f, 0.1f, 0.1f));
@@ -48,7 +48,7 @@ App::App() :
 	// faces: 483744
 	MeshManager.Load("zerling", "./models/zerling.obj");
 
-	mGeom->SetMesh(MeshManager.GetElement(h)->GetRaw());
+	mGeom->SetMesh(MeshManager[h]->GetRaw());
 	mGeom->LocalTransform.SetPosition(Vector3(0.0f, -1.0f, 0.0f));
 
 	h = TextureManager.Load("bunny", "./textures/bunny.png");
@@ -58,7 +58,7 @@ App::App() :
 	bunnyMaterial->mDiffuse = Vector3(1.0f, 1.0f, 1.0f);
 	bunnyMaterial->mSpecular = Vector3(1.0f, 1.0f, 1.0f);
 	bunnyMaterial->mShininess = 50.0f;
-	bunnyMaterial->mTexture = TextureManager.GetElement(h)->GetRaw();
+	bunnyMaterial->mTexture = TextureManager[h]->GetRaw();
 	h = MaterialManager.Add("bunny", bunnyMaterial);
 
 	Material* porcelainMaterial = new Material();
@@ -82,7 +82,7 @@ App::App() :
 	chromeMaterial->mShininess = 0.6f;
 	MaterialManager.Add("chrome", chromeMaterial);
 
-	mGeom->SetMaterial(MaterialManager.GetElement(h)->GetRaw());
+	mGeom->SetMaterial(MaterialManager[h]->GetRaw());
 
 	mWorld.AttachChild(mGeom);
 }
@@ -145,26 +145,26 @@ void App::OnKeyboard(unsigned char key, int x, int y)
 	{
 		switch(mMaterial)
 		{
-		case 0: mGeom->SetMaterial(MaterialManager.GetElement("gold")->GetRaw()); break;
-		case 1: mGeom->SetMaterial(MaterialManager.GetElement("chrome")->GetRaw()); break;
-		case 2: mGeom->SetMaterial(MaterialManager.GetElement("porcelain")->GetRaw()); break;
-		default: mGeom->SetMaterial(MaterialManager.GetElement("default")->GetRaw());
+		case 0: mGeom->SetMaterial(MaterialManager["gold"]->GetRaw()); break;
+		case 1: mGeom->SetMaterial(MaterialManager["chrome"]->GetRaw()); break;
+		case 2: mGeom->SetMaterial(MaterialManager["porcelain"]->GetRaw()); break;
+		default: mGeom->SetMaterial(MaterialManager["default"]->GetRaw());
 		}
 		mMaterial = (mMaterial + 1) % 3;
 	}
 
 	if (key == 'b')
-		mGeom->SetMaterial(MaterialManager.GetElement("bunny")->GetRaw());
+		mGeom->SetMaterial(MaterialManager["bunny"]->GetRaw());
 
 	if (key == 'c')
 	{
 		if (mRabbit)
 		{
-			mGeom->SetMesh(MeshManager.GetElement("zerling")->GetRaw());
+			mGeom->SetMesh(MeshManager["zerling"]->GetRaw());
 		}
 		else
 		{
-			mGeom->SetMesh(MeshManager.GetElement("bunny_smooth")->GetRaw());
+			mGeom->SetMesh(MeshManager["bunny_smooth"]->GetRaw());
 		}
 		mRabbit = !mRabbit;
 	}
@@ -173,11 +173,11 @@ void App::OnKeyboard(unsigned char key, int x, int y)
 	{
 		if (mDebug)
 		{
-			mRenderer->Bind(ShaderManager.GetElement("realistic")->GetRaw());
+			mRenderer->Bind(ShaderManager["realistic"]->GetRaw());
 		}
 		else
 		{
-			mRenderer->Bind(ShaderManager.GetElement("debug")->GetRaw());
+			mRenderer->Bind(ShaderManager["debug"]->GetRaw());
 		}
 		mDebug = !mDebug;
 	}

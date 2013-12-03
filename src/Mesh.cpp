@@ -6,9 +6,14 @@
 
 IMPLEMENT_MANAGER(Mesh);
 
-void LoadMesh(std::istream& input, std::vector<Vertice>& vertices, std::vector<TexCoords>& uvs, std::vector<Normal>& normals, std::vector<Face>& faces)
+void MeshParser::Load(Mesh* mesh, std::istream& input)
 {
+	std::vector<Vertice> vertices;
+	std::vector<TexCoords> uvs;
+	std::vector<Normal> normals;
+	std::vector<Face> faces;
 	std::string line;
+
 	while (std::getline(input, line))
 	{
 		std::stringstream ss(line);
@@ -56,6 +61,56 @@ void LoadMesh(std::istream& input, std::vector<Vertice>& vertices, std::vector<T
 			faces.push_back(f);
 		}
 	}
+
+	std::vector<Mesh::Vertex> vertexData;
+	vertexData.reserve(faces.size() * 3);
+	for (auto& f : faces)
+	{
+		if (uvs.size() > 0)
+		{
+			Mesh::Vertex v0(vertices[f.v[0] - 1], normals[f.vn[0] - 1], uvs[f.vt[0] - 1]);
+			Mesh::Vertex v1(vertices[f.v[1] - 1], normals[f.vn[1] - 1], uvs[f.vt[1] - 1]);
+			Mesh::Vertex v2(vertices[f.v[2] - 1], normals[f.vn[2] - 1], uvs[f.vt[2] - 1]);
+			vertexData.push_back(v0);
+			vertexData.push_back(v1);
+			vertexData.push_back(v2);
+		}
+		else
+		{
+			Mesh::Vertex v0(vertices[f.v[0] - 1], normals[f.vn[0] - 1]);
+			Mesh::Vertex v1(vertices[f.v[1] - 1], normals[f.vn[1] - 1]);
+			Mesh::Vertex v2(vertices[f.v[2] - 1], normals[f.vn[2] - 1]);
+			vertexData.push_back(v0);
+			vertexData.push_back(v1);
+			vertexData.push_back(v2);
+		}
+	}
+
+	mesh->Load(vertexData);
+}
+
+Mesh::Vertex::Vertex(Vertice v, Normal n)
+{
+	X = v.x;
+	Y = v.y;
+	Z = v.z;
+	NX = n.x;
+	NY = n.y;
+	NZ = n.z;
+	U = 0;
+	V = 0;
+}
+
+Mesh::Vertex::Vertex(Vertice v, Normal n, TexCoords t)
+{
+	X = v.x;
+	Y = v.y;
+	Z = v.z;
+	NX = n.x;
+	NY = n.y;
+	NZ = n.z;
+	U = t.u;
+	V = t.v;
 }
 
 Mesh::Mesh() :
@@ -75,58 +130,26 @@ Mesh::~Mesh()
 	mVertexBufferId = 0;
 }
 
-void Mesh::Load(std::istream& input)
+void Mesh::Load(std::vector<Vertex> vertexData)
 {
-	if (mVertexArrayId == 0)
-		glGenVertexArrays(1, &mVertexArrayId);
-	checkOpenGLError("Failed to generate VAO");
-	assert(mVertexArrayId != 0);
+	assert(mVertexArrayId == 0 && "mesh data already loaded");
+	glGenVertexArrays(1, &mVertexArrayId);
 	glBindVertexArray(mVertexArrayId);
 
-	std::vector<Vertice> vertices;
-	std::vector<TexCoords> uvs;
-	std::vector<Normal> normals;
-	std::vector<Face> faces;
-
-	LoadMesh(input, vertices, uvs, normals, faces);
-	mCount = faces.size() * 3;
-
-	for (auto& f : faces)
-	{
-		if (uvs.size() > 0)
-		{
-			VertexAttrib v0(vertices[f.v[0] - 1], normals[f.vn[0] - 1], uvs[f.vt[0] - 1]);
-			VertexAttrib v1(vertices[f.v[1] - 1], normals[f.vn[1] - 1], uvs[f.vt[1] - 1]);
-			VertexAttrib v2(vertices[f.v[2] - 1], normals[f.vn[2] - 1], uvs[f.vt[2] - 1]);
-			mVertices.push_back(v0);
-			mVertices.push_back(v1);
-			mVertices.push_back(v2);
-		}
-		else
-		{
-			VertexAttrib v0(vertices[f.v[0] - 1], normals[f.vn[0] - 1]);
-			VertexAttrib v1(vertices[f.v[1] - 1], normals[f.vn[1] - 1]);
-			VertexAttrib v2(vertices[f.v[2] - 1], normals[f.vn[2] - 1]);
-			mVertices.push_back(v0);
-			mVertices.push_back(v1);
-			mVertices.push_back(v2);
-		}
-	}
-
 	glGenBuffers(1, &mVertexBufferId);
-
 	glBindBuffer(GL_ARRAY_BUFFER, mVertexBufferId);
-	glBufferData(GL_ARRAY_BUFFER, mVertices.size() * sizeof(VertexAttrib), &mVertices[0], GL_STATIC_DRAW);
+	mCount = vertexData.size();
+	glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(Vertex), &vertexData[0], GL_STATIC_DRAW);
 	checkOpenGLError("Failed to copy vertex data");
 
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexAttrib), 0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
 
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(VertexAttrib), (GLvoid*) sizeof(Vertice));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*) sizeof(Vertice));
 
 	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(VertexAttrib), (GLvoid*)(sizeof(Vertice) + sizeof(Normal)));
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*) (sizeof(Vertice) + sizeof(Normal)));
 	checkOpenGLError("Failed to enable vertex attributes");
 
 	glBindVertexArray(0);
@@ -140,7 +163,7 @@ int Mesh::GetCount() const
 
 void Mesh::Bind() const
 {
-	assert(mVertexArrayId != 0 && "ERROR: must have a valid Vertex Array");
+	assert(mVertexArrayId != 0 && "mesh must have a valid Vertex Array");
 	glBindVertexArray(mVertexArrayId);
 }
 
@@ -152,11 +175,12 @@ void Mesh::Unbind() const
 bool MeshLoader::Load(MeshResource** resource, Handle handle, const std::string& filename)
 {
 	*resource = new MeshResource(handle, filename);
-	(*resource)->mRaw = new Mesh();
 
 	std::ifstream file(filename);
-	if(file.is_open()) {
-		(*resource)->mRaw->Load(file);
+	if (file.is_open())
+	{
+		(*resource)->mRaw = new Mesh();
+		MeshParser::Load((*resource)->mRaw, file);
 		return true;
 	}
 	return false;

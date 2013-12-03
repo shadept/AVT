@@ -14,8 +14,12 @@ template<typename T>
 class Resource
 {
 public:
+	typedef T raw_type;
+
 	Resource(const Handle handle, const std::string& filename);
 	virtual ~Resource();
+
+	inline operator T*() { return mRaw; }
 
 	std::string GetName();
 	std::string GetFilename();
@@ -25,8 +29,6 @@ public:
 //	void IncRef();
 //	void DecRef();
 //	unsigned int GetRefCount() const;
-
-	typedef T raw_type;
 
 	// internal use
 public:
