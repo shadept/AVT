@@ -100,7 +100,7 @@ void Renderer::SetCamera(Camera* camera)
 	mCamera = camera;
 }
 
-void Renderer::Bind(const Program* shader)
+void Renderer::SetGlobalShader(const Program* shader)
 {
 	shader->Use();
 	mShader = shader;
@@ -179,4 +179,19 @@ void Renderer::Draw(const Geometry* geometry)
 
 	geometry->GetMesh()->Unbind();
 	checkOpenGLError("Failed to unbind data");
+}
+
+void Renderer::Bind(const Light* light)
+{
+
+}
+
+void Renderer::Bind(const Material* light)
+{
+	
+}
+
+void Renderer::Bind(const Program* light)
+{
+	
 }

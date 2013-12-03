@@ -31,7 +31,7 @@ App::App() :
 	mCamera.SetLookAt(Vector3(0.0f, 0.0f, mDistance), Vector3::Zero);
 	mCamera.SetFustrum(35.0f, (float) 640 / 480, 1.0f, 20.0f);
 
-	mRenderer->Bind(shader);
+	mRenderer->SetGlobalShader(shader);
 	mRenderer->SetCamera(&mCamera);
 
 	mGeom = new Geometry();
@@ -173,11 +173,11 @@ void App::OnKeyboard(unsigned char key, int x, int y)
 	{
 		if (mDebug)
 		{
-			mRenderer->Bind(ShaderManager["realistic"]->GetRaw());
+			mRenderer->SetGlobalShader(ShaderManager["realistic"]->GetRaw());
 		}
 		else
 		{
-			mRenderer->Bind(ShaderManager["debug"]->GetRaw());
+			mRenderer->SetGlobalShader(ShaderManager["debug"]->GetRaw());
 		}
 		mDebug = !mDebug;
 	}

@@ -12,7 +12,7 @@ enum class LogLevel
 };
 
 struct endl_t{};
-static const struct endl_t endl;
+static const struct endl_t endl{};
 
 class Logger_
 {

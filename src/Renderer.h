@@ -10,6 +10,8 @@
 
 // Forward delcaration
 class Spatial;
+class Light;
+class Material;
 class Node;
 class Geometry;
 class Camera;
@@ -30,8 +32,7 @@ public:
 	////////////////////////// DRAWING SCENE //////////////////////////////
 
 	void SetCamera(Camera* camera);
-
-	void Bind(const Program* shader);
+	void SetGlobalShader(const Program* shader);
 
 	void DrawScene(Node* scene);
 	void Draw(const Geometry* geometry);
@@ -40,6 +41,10 @@ public:
 	mutable int _frameCounter;
 
 private:
+	void Bind(const Light* light);
+	void Bind(const Material* light);
+	void Bind(const Program* shader);
+
 	const Program* mShader, *mPickingShader;
 	Material* mDefaultMaterial;
 	Camera* mCamera;

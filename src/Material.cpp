@@ -6,10 +6,15 @@ IMPLEMENT_MANAGER(Material);
 
 MaterialParser::MaterialDefinition::MaterialDefinition()
 {
+	Reset();
+}
+
+void MaterialParser::MaterialDefinition::Reset()
+{
 	Ambient[0] = Ambient[1] = Ambient[2];
 	Diffuse[0] = Diffuse[1] = Diffuse[2];
 	Specular[0] = Specular[1] = Specular[2];
-	SpecularCoeff = Transparency = 0.0f;
+	SpecularCoeff = Transparency = RefractionIndex = 0.0f;
 	IlluminationModel = 0;
 }
 
@@ -31,7 +36,10 @@ void MaterialParser::Load(std::vector<MaterialDefinition>& materials, std::istre
 		else if (tag == "newmtl")
 		{
 			if (count > 0)
+			{
 				materials.push_back(material);
+				material.Reset();
+			}
 			ss >> material.Name;
 			count++;
 		}
@@ -51,6 +59,33 @@ void MaterialParser::Load(std::vector<MaterialDefinition>& materials, std::istre
 		{
 			ss >> material.SpecularCoeff;
 		}
+		else if (tag == "d" /*|| tag == "Tr"*/)
+		{
+			ss >> material.Transparency;
+		}
+		else if (tag == "Ni")
+		{
+			ss >> material.RefractionIndex;
+		}
+		else if (tag == "illum")
+		{
+			ss >> material.IlluminationModel;
+		}
+
+//		std::string Name; // newmtl
+//		std::string AmbientMap; // map_Ka
+//		std::string DiffuseMap; // map_Kd
+//		std::string SpecularMap; // map_Ks
+//		std::string SpecularCoeffMap; // map_Ns
+//		std::string TransparencyMap; // map_d or map_Tr
+//		std::string BumpMap; // map_bump or bump
+//		float Ambient[3]; // Ka
+//		float Diffuse[3]; // Kd
+//		float Specular[3]; // Ks
+//		float SpecularCoeff; // Ns
+//		float Transparency; // d or Tr
+//		float RefractionIndex; // Ni
+//		int IlluminationModel; // illum (0-no lighting applied, 1-normal lighting, 2-specular)
 	}
 }
 

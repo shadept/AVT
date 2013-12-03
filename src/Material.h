@@ -15,6 +15,8 @@ struct MaterialParser
 	{
 		MaterialDefinition();
 
+		void Reset();
+
 		std::string Name; // newmtl
 		std::string AmbientMap; // map_Ka
 		std::string DiffuseMap; // map_Kd
@@ -27,7 +29,8 @@ struct MaterialParser
 		float Specular[3]; // Ks
 		float SpecularCoeff; // Ns
 		float Transparency; // d or Tr
-		int IlluminationModel; // illum
+		float RefractionIndex; // Ni
+		int IlluminationModel; // illum (0-no lighting applied, 1-normal lighting, 2-specular)
 	};
 
 	static void Load(std::vector<MaterialDefinition>& materials, std::istream& input);
