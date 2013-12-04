@@ -15,8 +15,10 @@ public:
 		SPOTLGHT
 	};
 
-	Light(Type type);
+	Light(Type type = Type::POINTLIGHT);
 	~Light();
+
+	virtual void OnDraw(Renderer& renderer) const;
 
 // private:
 public:

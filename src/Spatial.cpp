@@ -1,12 +1,13 @@
 #include "Spatial.h"
 
+#include "Logger.h"
 #include "Node.h"
 #include <iostream>
 
 IdGenerator Spatial::msIdGenerator;
 
-Spatial::Spatial() :
-		mId(msIdGenerator.Generate()), mParent(nullptr)
+Spatial::Spatial(const std::string& name) :
+		mId(msIdGenerator.Generate()), mName(name), mParent(nullptr)
 {
 }
 

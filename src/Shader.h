@@ -88,6 +88,7 @@ private:
 
 struct Uniform
 {
+	static void Bind(const Program& program, const std::string& name, GLint value);
 	static void Bind(const Program& program, const std::string& name, GLfloat value);
 	static void Bind(const Program& program, const std::string& name, const Matrix4& value);
 	static void Bind(const Program& program, const std::string& name, const Vector3& value);

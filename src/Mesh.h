@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "OpenGL.h"
+#include "Vector3.h"
 
 class Mesh;
 
@@ -55,12 +56,14 @@ public:
 	void Load(std::vector<Vertex> vertexData);
 
 	int GetCount() const;
+	Vector3 GetCenterOfMass() const;
 
 	void Bind() const;
 	void Unbind() const;
 
 private:
 	GLuint mVertexArrayId, mVertexBufferId;
+	Vector3 mCenterOfMass;
 //	std::vector<Vertex> mVertices;
 	int mCount;
 };

@@ -8,7 +8,7 @@
 class Camera: public Spatial
 {
 public:
-	Camera();
+	Camera(const std::string& name = "camera");
 	virtual ~Camera();
 
 	void OnDraw(Renderer& renderer) const;

@@ -36,6 +36,7 @@ public:
 	virtual void OnUpdate(Real delta);
 
 	Identifier GetId() const;
+	const std::string& GetName() const {return mName;}
 	Node* GetParent() const;
 	void SetParent(Node* parent);
 
@@ -46,9 +47,10 @@ public:
 
 protected:
 	// Abstract
-	Spatial();
+	Spatial(const std::string& name);
 
 	Identifier mId;
+	std::string mName;
 	Node* mParent;
 
 	static IdGenerator msIdGenerator;

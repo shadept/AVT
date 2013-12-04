@@ -5,14 +5,17 @@
 #include "Camera.h"
 #include "Node.h"
 #include "Geometry.h"
+#include "Light.h"
 
 std::string readFile(const std::string& filename);
 
 Renderer::Renderer() :
-		mShader(nullptr), mPickingShader(0), mCamera(nullptr)
+		mShader(nullptr), mPickingShader(0), mCamera(nullptr), mLight(nullptr)
 {
 	_frameCounter = 0;
 	mPicking = false;
+	mLighting = true;
+	mNeedLightUpdate = true;
 
 	mDefaultMaterial = new Material();
 	mDefaultMaterial->mAmbient = Vector3(1.0f, 0.0f, 1.0f);
@@ -21,6 +24,20 @@ Renderer::Renderer() :
 	mDefaultMaterial->mShininess = 0.0f;
 
 	MaterialManager.Add("default", mDefaultMaterial);
+
+	Handle debug = ShaderManager.Load("debug", "./shaders/debug.vert", "./shaders/debug.frag");
+	Handle noLight = ShaderManager.Load("noligth", "./shaders/simple.vert", "./shaders/simple.frag");
+	Handle realistic = ShaderManager.Load("realistic", "./shaders/simple.vert", "./shaders/realistic.frag");
+	Handle specular = ShaderManager.Load("specular", "./shaders/simple.vert", "./shaders/specular.frag");
+
+	mDebugShader = ShaderManager[debug]->GetRaw();
+	mNoLightShader = ShaderManager[noLight]->GetRaw();
+	mRealisticShader = ShaderManager[realistic]->GetRaw();
+	mSpecularShader = ShaderManager[specular]->GetRaw();
+
+
+	mDebugging = false;
+	mShader = mRealisticShader;
 }
 
 Renderer::~Renderer()
@@ -95,6 +112,20 @@ Vector3 Renderer::Unproject(int x, int y)
 
 ////////////////////////// DRAWING SCENE //////////////////////////////
 
+void Renderer::SetDebug(bool on)
+{
+	mDebugging = on;
+	if (on)
+	{
+		mShader = mDebugShader;
+	}
+	else
+	{
+		mShader = (mLighting ? mRealisticShader : mNoLightShader);
+		mNeedLightUpdate = true;
+	}
+}
+
 void Renderer::SetCamera(Camera* camera)
 {
 	mCamera = camera;
@@ -106,16 +137,82 @@ void Renderer::SetGlobalShader(const Program* shader)
 	mShader = shader;
 }
 
+void Renderer::SetLighting(bool on)
+{
+	mLighting = on;
+	mNeedLightUpdate = true;
+	if (!mDebugging)
+	{
+		if (!on)
+			mShader = mNoLightShader;
+		else
+			mShader = mRealisticShader;
+	}
+}
+
 void Renderer::DrawScene(Node* scene)
 {
 	assert(mCamera && "Renderer must have a camera attached");
-	if (scene) scene->Draw(*this);
+	if (scene) {
+		// mLight = nullptr;
+		//TODO create list of object to draw, and sort them from back to front
+		scene->Draw(*this);
+
+		if (mTransparentList.size() > 0 && !mDebugging)
+		{
+			bool lighting = mLighting;
+			SetLighting(false);
+
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+			// Logger::Debug << "Drawing transparent objects" << Logger::endl;
+			// TODO order from back to front
+
+			// fill depth buffer
+			glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+			for (auto* geo : mTransparentList)
+				Draw(geo, true);
+
+			// with the depth buffer filled, polygon sorting is free
+			glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+			for (auto* geo : mTransparentList)
+				Draw(geo, true);
+
+			SetLighting(lighting);
+
+			// TODO specular hightlight
+			glDepthFunc(GL_EQUAL); // TODO move to context
+			for (auto* geo : mTransparentList)
+			{
+				const Material* mat = geo->GetMaterial();
+				Material specularMat = *mat;
+				specularMat.mAmbient = {};
+				specularMat.mDiffuse = {};
+				geo->SetMaterial(&specularMat);
+				Draw(geo, true);
+				geo->SetMaterial(mat);
+			}
+
+			glDepthFunc(GL_LEQUAL);
+			glDisable(GL_BLEND);
+		}
+		mTransparentList.clear();
+	}
 }
 
-void Renderer::Draw(const Geometry* geometry)
+void Renderer::Draw(Geometry* geometry, bool overrideTransparency)
 {
 	assert(mCamera && "Renderer must have a camera attached");
 	checkOpenGLError("Failed somewhere else");
+
+	const Material* material = geometry->GetMaterial() ? geometry->GetMaterial() : mDefaultMaterial;
+	if (material->mTransparency < 1.0f && overrideTransparency == false && !mDebugging)
+	{
+		// Logger::Debug << "Transparent material, saving for later" << Logger::endl;
+		mTransparentList.push_back(geometry);
+		return;
+	}
 
 	geometry->GetMesh()->Bind();
 	checkOpenGLError("Failed to bind mesh");
@@ -141,30 +238,10 @@ void Renderer::Draw(const Geometry* geometry)
 	}
 	else
 	{
+		if (mShader == NULL)
+			Logger::Fatal << "Cannot bind NULL shader" << Logger::endl;
+
 		mShader->Use();
-		const Material* material = geometry->GetMaterial();
-		if (material == NULL)
-		{
-			material = mDefaultMaterial;
-		}
-		if (material->mTexture != NULL)
-		{
-			material->mTexture->Bind();
-			glUniform1i((*mShader)["MaterialHasTexture"], GL_TRUE);
-		}
-		else
-		{
-			glUniform1i((*mShader)["MaterialHasTexture"], GL_FALSE);
-		}
-		glUniform1i((*mShader)["MaterialTexture"], 0); // GL_TEXTURE0
-		Uniform::Bind(*mShader, "MaterialAmbientColor", material->mAmbient);
-		Uniform::Bind(*mShader, "MaterialDiffuseColor",  material->mDiffuse);
-		Uniform::Bind(*mShader, "MaterialSpecularColor",  material->mSpecular);
-		Uniform::Bind(*mShader, "MaterialShininess",  material->mShininess * 128.0f);
-		checkOpenGLError("Failed to bind material");
-
-
-//		checkOpenGLError("Failed to bind shader");
 		Uniform::Bind(*mShader, "NormalMatrix", NormalMatrix);
 		Uniform::Bind(*mShader, "ModelMatrix", ModelMatrix);
 		Uniform::Bind(*mShader, "ViewMatrix", ViewMatrix);
@@ -172,6 +249,15 @@ void Renderer::Draw(const Geometry* geometry)
 		Uniform::Bind(*mShader, "ModelViewMatrix", ModelViewMatrix);
 		Uniform::Bind(*mShader, "ModelViewProjectionMatrix", ModelViewProjectionMatrix);
 		checkOpenGLError("Failed to bind matrixes");
+
+		Bind(geometry->GetMaterial(), mShader);
+
+		if (mNeedLightUpdate)
+		{
+			// Logger::Debug << "Updating Lighting" << Logger::endl;
+			Bind(mLight, mShader);
+			mNeedLightUpdate = false;
+		}
 	}
 
 	glDrawArrays(GL_TRIANGLES, 0, geometry->GetMesh()->GetCount());
@@ -181,17 +267,44 @@ void Renderer::Draw(const Geometry* geometry)
 	checkOpenGLError("Failed to unbind data");
 }
 
-void Renderer::Bind(const Light* light)
+void Renderer::Draw(const Light* light)
 {
-
+	mLight = light;
+	mNeedLightUpdate = true;
 }
 
-void Renderer::Bind(const Material* light)
+void Renderer::Bind(const Light* light, const Program* shader)
 {
-	
+	if (mLighting == false) {
+		return;
+	}
+
+	assert(light != NULL && "cannot bind NULL light");
+
+	light->UpdateTransformation();
+	const Vector3& position = light->LocalTransform.Position();
+	Uniform::Bind(*shader, "LightPosition", position);
+	Uniform::Bind(*shader, "LightAmbientColor", light->mAmbientColor);
+	Uniform::Bind(*shader, "LightDiffuseColor", light->mDiffuseColor);
+	Uniform::Bind(*shader, "LightSpecularColor", light->mSpecularColor);
 }
 
-void Renderer::Bind(const Program* light)
+void Renderer::Bind(const Material* material, const Program* shader)
 {
-	
+	if (material->mTexture != NULL)
+	{
+		material->mTexture->Bind();
+		Uniform::Bind(*shader, "MaterialHasTexture", GL_TRUE);
+	}
+	else
+	{
+		Uniform::Bind(*shader, "MaterialHasTexture", GL_FALSE);
+	}
+	Uniform::Bind(*shader, "MaterialTexture", 0); // GL_TEXTURE0
+	Uniform::Bind(*shader, "MaterialAmbientColor", material->mAmbient);
+	Uniform::Bind(*shader, "MaterialDiffuseColor",  material->mDiffuse);
+	Uniform::Bind(*shader, "MaterialSpecularColor",  material->mSpecular);
+	Uniform::Bind(*shader, "MaterialShininess",  material->mShininess * 128.0f);
+	Uniform::Bind(*shader, "MaterialTransparency", material->mTransparency);
+	checkOpenGLError("Failed to bind material");
 }

@@ -5,6 +5,7 @@
 #include "Camera.h"
 #include "Geometry.h"
 #include "Node.h"
+#include "Light.h"
 
 class App: public Application
 {
@@ -36,6 +37,7 @@ private:
 	int mMaterial;
 
 	Geometry* mGeom;
+	Light mLight;
 };
 
 #endif /* APP_H_ */

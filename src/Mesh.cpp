@@ -154,11 +154,22 @@ void Mesh::Load(std::vector<Vertex> vertexData)
 
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// find center of mass
+	for (auto& v : vertexData)
+		mCenterOfMass += {v.X, v.Y, v.Z};
+
+	mCenterOfMass = mCenterOfMass * (1.0f / mCount);
 }
 
 int Mesh::GetCount() const
 {
 	return mCount;
+}
+
+Vector3 Mesh::GetCenterOfMass() const
+{
+	return mCenterOfMass;
 }
 
 void Mesh::Bind() const

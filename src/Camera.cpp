@@ -5,7 +5,8 @@
 #undef far
 #endif // _MSC_VER
 
-Camera::Camera()
+Camera::Camera(const std::string& name) :
+	Spatial(name)
 {
 	mIsDirty = true;
 }

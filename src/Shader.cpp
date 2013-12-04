@@ -143,6 +143,26 @@ bool Program::IsLinked() const
 	return status == GL_TRUE;
 }
 
+void Uniform::Bind(const Program& program, const std::string& name, GLint value)
+{
+	GLint location = program[name];
+	if (location != -1)
+	{
+		if (Program::msCurrentlyInUse == program.mProgram)
+			glUniform1i(location, (GLint) value);
+		else
+		{
+			GLint current;
+			glGetIntegerv(GL_CURRENT_PROGRAM, &current);
+			program.Use();
+			glUniform1i(location, (GLint) value);
+			glUseProgram(current);
+			Program::msCurrentlyInUse = current;
+		}
+	}
+	checkOpenGLError("Failed to bind uniform " + name);
+}
+
 void Uniform::Bind(const Program& program, const std::string& name, Real value)
 {
 	GLint location = program[name];

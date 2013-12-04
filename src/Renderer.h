@@ -31,24 +31,39 @@ public:
 
 	////////////////////////// DRAWING SCENE //////////////////////////////
 
+	void SetDebug(bool on);
 	void SetCamera(Camera* camera);
 	void SetGlobalShader(const Program* shader);
+	void SetLighting(bool on);
 
 	void DrawScene(Node* scene);
-	void Draw(const Geometry* geometry);
+	void Draw(Geometry* geometry, bool overrideTransparency = false);
+	void Draw(const Light* light);
 
 public:
 	mutable int _frameCounter;
 
 private:
-	void Bind(const Light* light);
-	void Bind(const Material* light);
+	void Bind(const Light* light, const Program* shader);
+	void Bind(const Material* material, const Program* shader);
 	void Bind(const Program* shader);
 
-	const Program* mShader, *mPickingShader;
+	// Render specific variables
 	Material* mDefaultMaterial;
+	Program* mDebugShader;
+	Program* mNoLightShader;
+	Program* mRealisticShader;
+	Program* mSpecularShader;
+
+	// Other variables
+	const Program* mShader, *mPickingShader;
 	Camera* mCamera;
-	bool mPicking;
+	const Light* mLight;
+	bool mPicking, mLighting;
+	bool mNeedLightUpdate;
+	bool mDebugging;
+
+	std::vector<Geometry*> mTransparentList;
 
 };
 

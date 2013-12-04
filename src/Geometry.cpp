@@ -1,11 +1,11 @@
 #include "Geometry.h"
 
-Geometry::Geometry(const Mesh* mesh, const Material* material) :
-		mMesh(mesh), mMaterial(material)
+Geometry::Geometry(const std::string& name, const Mesh* mesh, const Material* material) :
+		Spatial(name), mMesh(mesh), mMaterial(material)
 {
 }
 
 void Geometry::OnDraw(Renderer& renderer) const
 {
-	renderer.Draw(this);
+	renderer.Draw((Geometry*)this);
 }

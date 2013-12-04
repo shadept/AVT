@@ -214,6 +214,6 @@ Quaternion operator *(Real a, const Quaternion& q)
 
 std::ostream& operator <<(std::ostream& os, const Quaternion& q)
 {
-	os << "(" << q.T << ",\t" << q.X << ",\t" << q.Y << ",\t" << q.Z << ")\n";
+	os << "(" << q.T << ",\t" << q.X << ",\t" << q.Y << ",\t" << q.Z << ")";
 	return os;
 }

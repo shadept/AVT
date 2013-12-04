@@ -11,9 +11,12 @@ public:
 	Transformation& operator =(const Transformation& rhs);
 
 	Transformation operator*(const Transformation& rhs) const;
+	Vector3 operator*(const Vector3& rhs) const;
 
 	Matrix4 GetMatrix() const;
 	operator Matrix4() const;
+
+	Transformation Inverse() const;
 
 	Transformation& Rotate(const Quaternion& rotation);
 	Transformation& Rotate(const Vector3& axis, Real angle);

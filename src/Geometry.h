@@ -10,7 +10,7 @@
 class Geometry: public Spatial
 {
 public:
-	Geometry(const Mesh* mesh = NULL, const Material* material = NULL);
+	Geometry(const std::string& name, const Mesh* mesh = NULL, const Material* material = NULL);
 	virtual ~Geometry() {};
 
 	virtual void OnDraw(Renderer& renderer) const;

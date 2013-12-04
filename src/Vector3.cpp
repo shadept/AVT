@@ -141,6 +141,6 @@ bool Vector3::operator !=(const Vector3& rhs) const
 
 std::ostream& operator <<(std::ostream& os, const Vector3& v)
 {
-	os << "(" << v[0] << ",\t" << v[1] << ",\t" << v[2] << ")\n";
+	os << "(" << v[0] << ",\t" << v[1] << ",\t" << v[2] << ")";
 	return os;
 }

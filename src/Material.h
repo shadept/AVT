@@ -48,6 +48,7 @@ public:
 	Vector3 mDiffuse;
 	Vector3 mSpecular;
 	Texture* mTexture;
+	float mTransparency;
 	float mShininess;
 };
 

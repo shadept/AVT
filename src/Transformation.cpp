@@ -41,6 +41,11 @@ Transformation Transformation::operator *(const Transformation& rhs) const
 	return ret;
 }
 
+Vector3 Transformation::operator*(const Vector3& rhs) const
+{
+	return mRotation * (mScale * rhs) + mPosition;
+}
+
 Matrix4 Transformation::GetMatrix() const
 {
 	Update();
@@ -51,6 +56,15 @@ Transformation::operator Matrix4() const
 {
 	Update();
 	return mMatrix;
+}
+
+Transformation Transformation::Inverse() const
+{
+	Transformation inverse;
+	inverse.mPosition = -mPosition;
+	inverse.mRotation = mRotation.inverse();
+	inverse.mScale.set(1.0f / mScale.X, 1.0f / mScale.Y, 1.0f / mScale.Z);	
+	return inverse;
 }
 
 Transformation& Transformation::Rotate(const Quaternion& rotation)

@@ -5,7 +5,7 @@
 #include <sstream>
 
 App::App() :
-		Application("Title", 640, 480)
+		Application("Title", 640, 480), mWorld("world")
 {
 	mFPS = 0;
 	mCameraUp = Vector3::AxisY;
@@ -18,23 +18,22 @@ App::App() :
 	mDebug = false;
 	mMaterial = 0;
 
-	Handle h = -1;
-	h = ShaderManager.Load("realistic", "./shaders/realistic.vert", "./shaders/realistic.frag");
-	ShaderManager.Load("debug", "./shaders/debug.vert", "./shaders/debug.frag");
-	Program* shader = ShaderManager[h]->GetRaw();
+	mLight.LocalTransform.SetPosition({0.0f, 0.0f, 20.0f});
+	mLight.mAmbientColor = Vector3(0.1f, 0.1f, 0.1f);
+	mLight.mDiffuseColor = Vector3(1.0f, 1.0f, 1.0f);
+	mLight.mSpecularColor = Vector3(1.0f, 1.0f, 1.0f);
 
-	Uniform::Bind(*shader, "LightPosition", Vector3(0.0f, 0.0f, 20.0f));
-	Uniform::Bind(*shader, "LightAmbientColor", Vector3(0.1f, 0.1f, 0.1f));
-	Uniform::Bind(*shader, "LightDiffuseColor", Vector3(1.0f, 1.0f, 1.0f));
-	Uniform::Bind(*shader, "LightSpecularColor", Vector3(1.0f, 1.0f, 1.0f));
+	mRenderer->SetLighting(true);
+	mRenderer->Draw(&mLight);
 
 	mCamera.SetLookAt(Vector3(0.0f, 0.0f, mDistance), Vector3::Zero);
 	mCamera.SetFustrum(35.0f, (float) 640 / 480, 1.0f, 20.0f);
 
-	mRenderer->SetGlobalShader(shader);
 	mRenderer->SetCamera(&mCamera);
 
-	mGeom = new Geometry();
+	mGeom = new Geometry("model");
+	
+	Handle h = -1;
 
 	// verts: 2503
 	// faces: 4968
@@ -54,12 +53,21 @@ App::App() :
 	h = TextureManager.Load("bunny", "./textures/bunny.png");
 
 	Material* bunnyMaterial = new Material();
-	bunnyMaterial->mAmbient = Vector3(0.1f, 0.1f, 0.1f);
-	bunnyMaterial->mDiffuse = Vector3(1.0f, 1.0f, 1.0f);
-	bunnyMaterial->mSpecular = Vector3(1.0f, 1.0f, 1.0f);
+	bunnyMaterial->mAmbient = Vector3(0.1f, 0.05f, 0.0f);
+	bunnyMaterial->mDiffuse = Vector3(1.0f, 0.5f, 0.0f);
+	bunnyMaterial->mSpecular = Vector3(1.0f, 0.5f, 0.0f);
 	bunnyMaterial->mShininess = 50.0f;
 	bunnyMaterial->mTexture = TextureManager[h]->GetRaw();
 	h = MaterialManager.Add("bunny", bunnyMaterial);
+
+	Material* glassMaterial = new Material();
+	glassMaterial->mAmbient = Vector3(0.576471f, 0.647059f, 0.666667f);
+	glassMaterial->mDiffuse = Vector3(0.921569f, 0.945098f, 0.937255f);
+	glassMaterial->mSpecular = Vector3(1.0f, 1.0f, 1.0f);
+	// glassMaterial->mShininess = 147.033f;
+	glassMaterial->mShininess = 0.6f;
+	glassMaterial->mTransparency = 0.21f;
+	MaterialManager.Add("glass", glassMaterial);
 
 	Material* porcelainMaterial = new Material();
 	porcelainMaterial->mAmbient = Vector3(0.1f, 0.1f, 0.1f);
@@ -85,6 +93,17 @@ App::App() :
 	mGeom->SetMaterial(MaterialManager[h]->GetRaw());
 
 	mWorld.AttachChild(mGeom);
+
+	Geometry* bunny2 = new Geometry("bunny2");
+	bunny2->SetMesh(MeshManager["bunny_smooth"]->GetRaw());
+	bunny2->SetMaterial(MaterialManager["chrome"]->GetRaw());
+	bunny2->LocalTransform.SetPosition({0.0f, -1.0f, -5.0f});
+
+	mWorld.AttachChild(bunny2);
+
+	mGeom->UpdateTransformation();
+	Vector3 center = mGeom->WorldTransform * mGeom->GetMesh()->GetCenterOfMass();
+	Logger::Debug << "Bunny center of mass in world coords " << center << Logger::endl;
 }
 
 App::~App()
@@ -141,6 +160,14 @@ void App::OnMouseMotion(int x, int y)
 
 void App::OnKeyboard(unsigned char key, int x, int y)
 {
+	static bool lighting = true;
+
+	if (key == 'l')
+	{
+		lighting = !lighting;
+		mRenderer->SetLighting(lighting);
+	}
+
 	if (key == 'm')
 	{
 		switch(mMaterial)
@@ -148,9 +175,10 @@ void App::OnKeyboard(unsigned char key, int x, int y)
 		case 0: mGeom->SetMaterial(MaterialManager["gold"]->GetRaw()); break;
 		case 1: mGeom->SetMaterial(MaterialManager["chrome"]->GetRaw()); break;
 		case 2: mGeom->SetMaterial(MaterialManager["porcelain"]->GetRaw()); break;
+		case 3: mGeom->SetMaterial(MaterialManager["glass"]->GetRaw()); break;
 		default: mGeom->SetMaterial(MaterialManager["default"]->GetRaw());
 		}
-		mMaterial = (mMaterial + 1) % 3;
+		mMaterial = (mMaterial + 1) % 4;
 	}
 
 	if (key == 'b')
@@ -171,15 +199,9 @@ void App::OnKeyboard(unsigned char key, int x, int y)
 
 	if (key == 's')
 	{
-		if (mDebug)
-		{
-			mRenderer->SetGlobalShader(ShaderManager["realistic"]->GetRaw());
-		}
-		else
-		{
-			mRenderer->SetGlobalShader(ShaderManager["debug"]->GetRaw());
-		}
-		mDebug = !mDebug;
+		static bool debug = false;
+		debug = !debug;
+		mRenderer->SetDebug(debug);
 	}
 
 	if (key == 'f')
