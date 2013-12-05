@@ -81,6 +81,9 @@
     <ClCompile Include="..\..\src\Texture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\Light.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\App.h">
@@ -158,50 +161,5 @@
     <ClInclude Include="..\..\src\Texture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="..\..\models\bunny_flat.obj">
-      <Filter>Resource Files</Filter>
-    </Text>
-    <Text Include="..\..\models\bunny_smooth.obj">
-      <Filter>Resource Files</Filter>
-    </Text>
-    <Text Include="..\..\models\cube.obj">
-      <Filter>Resource Files</Filter>
-    </Text>
-    <Text Include="..\..\shaders\debug.frag">
-      <Filter>Resource Files</Filter>
-    </Text>
-    <Text Include="..\..\shaders\debug.vert">
-      <Filter>Resource Files</Filter>
-    </Text>
-    <Text Include="..\..\shaders\picking.frag">
-      <Filter>Resource Files</Filter>
-    </Text>
-    <Text Include="..\..\shaders\picking.vert">
-      <Filter>Resource Files</Filter>
-    </Text>
-    <Text Include="..\..\shaders\realistic.frag">
-      <Filter>Resource Files</Filter>
-    </Text>
-    <Text Include="..\..\shaders\realistic.vert">
-      <Filter>Resource Files</Filter>
-    </Text>
-    <Text Include="..\..\models\zerling.obj">
-      <Filter>Resource Files</Filter>
-    </Text>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="..\..\textures\bunny.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\..\src\Logger.inl">
-      <Filter>Source Files</Filter>
-    </None>
-    <None Include="..\..\src\Manager.inl">
-      <Filter>Source Files</Filter>
-    </None>
   </ItemGroup>
 </Project>

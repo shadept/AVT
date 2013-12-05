@@ -157,7 +157,7 @@ void Mesh::Load(std::vector<Vertex> vertexData)
 
 	// find center of mass
 	for (auto& v : vertexData)
-		mCenterOfMass += {v.X, v.Y, v.Z};
+		mCenterOfMass += Vector3(v.X, v.Y, v.Z);
 
 	mCenterOfMass = mCenterOfMass * (1.0f / mCount);
 }

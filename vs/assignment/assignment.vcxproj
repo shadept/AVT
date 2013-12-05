@@ -40,7 +40,10 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LinkIncremental>true</LinkIncremental>
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir>$(Configuration)\</IntDir>
+    <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -56,10 +59,14 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
       <AdditionalDependencies>glew32.lib;freeglut.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\dependencies\glew\lib;..\..\dependencies\freeglut\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -86,6 +93,7 @@
     <ClCompile Include="..\..\src\Context.cpp" />
     <ClCompile Include="..\..\src\Geometry.cpp" />
     <ClCompile Include="..\..\src\GlobalState.cpp" />
+    <ClCompile Include="..\..\src\Light.cpp" />
     <ClCompile Include="..\..\src\lodepng.cpp" />
     <ClCompile Include="..\..\src\main.cpp" />
     <ClCompile Include="..\..\src\Material.cpp" />
@@ -129,49 +137,6 @@
     <ClInclude Include="..\..\src\Transformation.h" />
     <ClInclude Include="..\..\src\Vector3.h" />
     <ClInclude Include="..\..\src\Window.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="..\..\shaders\debug.frag">
-      <FileType>Document</FileType>
-    </Text>
-    <Text Include="..\..\shaders\debug.vert">
-      <FileType>Document</FileType>
-    </Text>
-    <Text Include="..\..\shaders\picking.frag">
-      <FileType>Document</FileType>
-    </Text>
-    <Text Include="..\..\shaders\picking.vert">
-      <FileType>Document</FileType>
-    </Text>
-    <Text Include="..\..\shaders\realistic.frag">
-      <FileType>Document</FileType>
-    </Text>
-    <Text Include="..\..\shaders\realistic.vert">
-      <FileType>Document</FileType>
-    </Text>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="..\..\models\bunny_flat.obj">
-      <FileType>Document</FileType>
-    </Text>
-    <Text Include="..\..\models\bunny_smooth.obj">
-      <FileType>Document</FileType>
-    </Text>
-    <Text Include="..\..\models\cube.obj">
-      <FileType>Document</FileType>
-    </Text>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="..\..\models\zerling.obj">
-      <FileType>Document</FileType>
-    </Text>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="..\..\textures\bunny.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\..\src\Logger.inl" />
-    <None Include="..\..\src\Manager.inl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

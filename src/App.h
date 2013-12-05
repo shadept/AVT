@@ -33,10 +33,12 @@ private:
 	Real mDistance;
 
 	bool mDragging, mFriction;
-	bool mRabbit, mDebug;
+	bool mDebug;
+	bool mMovingSphere = false;
 	int mMaterial;
 
-	Geometry* mGeom;
+	Node* mCenter;
+	Geometry* mSphere, *mModel;
 	Light mLight;
 };
 

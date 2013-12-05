@@ -14,7 +14,6 @@ App::App() :
 	mDragOriginX = mDragOriginY = 0.0f;
 	mDistance = 5.0f;
 	mDragging = mFriction = false;
-	mRabbit = true;
 	mDebug = false;
 	mMaterial = 0;
 
@@ -31,13 +30,16 @@ App::App() :
 
 	mRenderer->SetCamera(&mCamera);
 
-	mGeom = new Geometry("model");
+	mModel = new Geometry("model");
+
+	mCenter = new Node("center");
+	mCenter->AttachChild(mModel);
 	
 	Handle h = -1;
 
 	// verts: 2503
 	// faces: 4968
-	h = MeshManager.Load("bunny_smooth", "./models/bunny_smooth.obj");
+	h = MeshManager.Load("bunny", "./models/bunny_smooth.obj");
 
 	// verts: 2503
 	// faces: 4968
@@ -45,12 +47,24 @@ App::App() :
 
 	// verts: 242841
 	// faces: 483744
-	MeshManager.Load("zerling", "./models/zerling.obj");
+//	MeshManager.Load("zerling", "./models/zerling.obj");
 
-	mGeom->SetMesh(MeshManager[h]->GetRaw());
-	mGeom->LocalTransform.SetPosition(Vector3(0.0f, -1.0f, 0.0f));
+	MeshManager.Load("diablo", "./models/Diablo.obj");
+
+	MeshManager.Load("headcrab", "./models/headcrab.obj");
+
+	MeshManager.Load("kaleidoscope", "./models/kaleidoscope.obj");
+
+	mModel->SetMesh(MeshManager[h]->GetRaw());
+	mModel->LocalTransform.SetPosition(Vector3(0.0f, -1.0f, 0.0f));
 
 	h = TextureManager.Load("bunny", "./textures/bunny.png");
+
+	TextureManager.Load("kaleidoscope0", "./textures/kaleidoscope0.png");
+	TextureManager.Load("kaleidoscope1", "./textures/kaleidoscope1.png");
+
+	TextureManager.Load("diablo", "./textures/Diablo_diff.png");
+	TextureManager.Load("headcrab", "./textures/headcrab.png");
 
 	Material* bunnyMaterial = new Material();
 	bunnyMaterial->mAmbient = Vector3(0.1f, 0.05f, 0.0f);
@@ -66,7 +80,8 @@ App::App() :
 	glassMaterial->mSpecular = Vector3(1.0f, 1.0f, 1.0f);
 	// glassMaterial->mShininess = 147.033f;
 	glassMaterial->mShininess = 0.6f;
-	glassMaterial->mTransparency = 0.21f;
+	glassMaterial->mTransparency = 0.5f; // 0.21f
+	glassMaterial->mTexture = TextureManager["bunny"]->GetRaw();
 	MaterialManager.Add("glass", glassMaterial);
 
 	Material* porcelainMaterial = new Material();
@@ -90,25 +105,52 @@ App::App() :
 	chromeMaterial->mShininess = 0.6f;
 	MaterialManager.Add("chrome", chromeMaterial);
 
-	mGeom->SetMaterial(MaterialManager[h]->GetRaw());
+	Material* kaleidoscopeMaterial = new Material();
+	kaleidoscopeMaterial->mAmbient = Vector3(0.1f, 0.1f, 0.1f);
+	kaleidoscopeMaterial->mDiffuse = Vector3(1.0f, 1.0f, 1.0f);
+	kaleidoscopeMaterial->mSpecular = Vector3(1.0f, 1.0f, 1.0f);
+	kaleidoscopeMaterial->mShininess = 5000.0f;
+	kaleidoscopeMaterial->mTexture = TextureManager["kaleidoscope0"]->GetRaw();
+	MaterialManager.Add("kaleidoscope", kaleidoscopeMaterial);
 
-	mWorld.AttachChild(mGeom);
+	Material* diabloMaterial = new Material();
+	diabloMaterial->mAmbient = Vector3(0.1f, 0.1f, 0.1f);
+	diabloMaterial->mDiffuse = Vector3(1.0f, 1.0f, 1.0f);
+	diabloMaterial->mSpecular = Vector3(1.0f, 1.0f, 1.0f);
+	diabloMaterial->mShininess = 5000.0f;
+	diabloMaterial->mTexture = TextureManager["diablo"]->GetRaw();
+	MaterialManager.Add("diablo", diabloMaterial);
 
-	Geometry* bunny2 = new Geometry("bunny2");
-	bunny2->SetMesh(MeshManager["bunny_smooth"]->GetRaw());
-	bunny2->SetMaterial(MaterialManager["chrome"]->GetRaw());
-	bunny2->LocalTransform.SetPosition({0.0f, -1.0f, -5.0f});
+	Material* headcrabMaterial = new Material();
+	headcrabMaterial->mAmbient = Vector3(0.1f, 0.1f, 0.1f);
+	headcrabMaterial->mDiffuse = Vector3(1.0f, 1.0f, 1.0f);
+	headcrabMaterial->mSpecular = Vector3(1.0f, 1.0f, 1.0f);
+	headcrabMaterial->mShininess = 5000.0f;
+	headcrabMaterial->mTexture = TextureManager["headcrab"]->GetRaw();
+	MaterialManager.Add("headcrab", headcrabMaterial);
 
-	mWorld.AttachChild(bunny2);
+	mModel->SetMaterial(MaterialManager[h]->GetRaw());
 
-	mGeom->UpdateTransformation();
-	Vector3 center = mGeom->WorldTransform * mGeom->GetMesh()->GetCenterOfMass();
-	Logger::Debug << "Bunny center of mass in world coords " << center << Logger::endl;
+	mWorld.AttachChild(mCenter);
+
+	mSphere = new Geometry("sphere");
+	mSphere->SetMesh(MeshManager["kaleidoscope"]->GetRaw());
+	mSphere->SetMaterial(MaterialManager["kaleidoscope"]->GetRaw());
+	mSphere->LocalTransform.SetPosition({ 0.0f, 0.0f, 0.0f });
+	mSphere->LocalTransform.SetScale({ 10.0f, 10.0f, 10.0f });
+
+	mWorld.AttachChild(mSphere);
+
+	//mCenter->UpdateTransformation();
+	//Vector3 center = mGeom->WorldTransform * mCenter->GetMesh()->GetCenterOfMass();
+	//Logger::Debug << "Bunny center of mass in world coords " << center << Logger::endl;
 }
 
 App::~App()
 {
-	delete mGeom;
+	delete mCenter;
+	delete mSphere;
+	delete mModel;
 }
 
 void App::OnDraw()
@@ -138,11 +180,13 @@ void App::OnMouse(int button, int state, int x, int y)
 	if (button == 3 && state == GLUT_DOWN)
 	{
 		mDistance -= 0.3f;
+		mDistance = Math::max(mDistance, 0.0f);
 	}
 
 	if (button == 4 && state == GLUT_DOWN)
 	{
 		mDistance += 0.3f;
+		mDistance = Math::min(mDistance, 10.0f);
 	}
 
 }
@@ -172,29 +216,48 @@ void App::OnKeyboard(unsigned char key, int x, int y)
 	{
 		switch(mMaterial)
 		{
-		case 0: mGeom->SetMaterial(MaterialManager["gold"]->GetRaw()); break;
-		case 1: mGeom->SetMaterial(MaterialManager["chrome"]->GetRaw()); break;
-		case 2: mGeom->SetMaterial(MaterialManager["porcelain"]->GetRaw()); break;
-		case 3: mGeom->SetMaterial(MaterialManager["glass"]->GetRaw()); break;
-		default: mGeom->SetMaterial(MaterialManager["default"]->GetRaw());
+		case 0: mModel->SetMaterial(MaterialManager["gold"]->GetRaw()); break;
+		case 1: mModel->SetMaterial(MaterialManager["chrome"]->GetRaw()); break;
+		case 2: mModel->SetMaterial(MaterialManager["porcelain"]->GetRaw()); break;
+		case 3: mModel->SetMaterial(MaterialManager["glass"]->GetRaw()); break;
+		default: mModel->SetMaterial(MaterialManager["default"]->GetRaw());
 		}
 		mMaterial = (mMaterial + 1) % 4;
 	}
 
-	if (key == 'b')
-		mGeom->SetMaterial(MaterialManager["bunny"]->GetRaw());
-
 	if (key == 'c')
 	{
-		if (mRabbit)
+		static int k = 0;
+		k = (k + 1) % 3;
+		switch (k)
 		{
-			mGeom->SetMesh(MeshManager["zerling"]->GetRaw());
+		case 0:
+			mModel->SetMesh(MeshManager["bunny"]->GetRaw());
+			MaterialManager["glass"]->GetRaw()->mTexture = TextureManager["bunny"]->GetRaw();
+			mModel->SetMaterial(MaterialManager["bunny"]->GetRaw());
+			break;
+		case 1:
+			mModel->SetMesh(MeshManager["diablo"]->GetRaw());
+			MaterialManager["glass"]->GetRaw()->mTexture = TextureManager["diablo"]->GetRaw();
+			mModel->SetMaterial(MaterialManager["diablo"]->GetRaw());
+			break;
+		case 2:
+			mModel->SetMesh(MeshManager["headcrab"]->GetRaw());
+			MaterialManager["glass"]->GetRaw()->mTexture = TextureManager["headcrab"]->GetRaw();
+			mModel->SetMaterial(MaterialManager["headcrab"]->GetRaw());
+			break;
 		}
-		else
+	}
+
+	if (key == 'k')
+	{
+		static int k = 0;
+		k = (k + 1) % 2;
+		switch (k)
 		{
-			mGeom->SetMesh(MeshManager["bunny_smooth"]->GetRaw());
+		case 0: MaterialManager["kaleidoscope"]->GetRaw()->mTexture = TextureManager["kaleidoscope0"]->GetRaw(); break;
+		case 1: MaterialManager["kaleidoscope"]->GetRaw()->mTexture = TextureManager["kaleidoscope1"]->GetRaw(); break;
 		}
-		mRabbit = !mRabbit;
 	}
 
 	if (key == 's')
@@ -214,6 +277,9 @@ void App::OnKeyboard(unsigned char key, int x, int y)
 		std::cout << "Transformed: " << v;
 		std::cout << "Length: " << v.length() << std::endl;
 	}
+
+	if (key == ' ')
+		mMovingSphere = !mMovingSphere;
 }
 
 void App::OnResize(int w, int h)
@@ -230,7 +296,7 @@ void App::OnUpdate(const Real delta)
 	if (counter >= 1.0f)
 	{
 		std::stringstream ss;
-		ss << "Title @ FPS : " << mFPS;
+		ss << "SUPER HYPER MEGA SUCH TRIP WOW. Kiss, Diablo ;-) @ FPS : " << mFPS;
 		mWindow->SetTitle(ss.str());
 		counter = 0.0f;
 		mFPS = 0;
@@ -238,12 +304,19 @@ void App::OnUpdate(const Real delta)
 
 	mWorld.OnUpdate(delta);
 
-	Real offX = mOffsetX * 130.0f;
-	Real offY = mOffsetY * 130.0f;
+	Real offX = Math::clamp(mOffsetX * 130.0f, -1000.0f, 1000.0f);
+	Real offY = Math::clamp(mOffsetY * 130.0f, -1000.0f, 1000.0f);
+
+	if (mMovingSphere){
+		mSphere->LocalTransform.Rotate(Quaternion::fromAxisAngle(mSphere->LocalTransform.Up(), -offX * delta / 200.0f));
+		mSphere->LocalTransform.Rotate(Quaternion::fromAxisAngle(mSphere->LocalTransform.Side(), -offY * delta / 200.0f));
+	}
+	else{
+		mCenter->LocalTransform.Rotate(Quaternion::fromAxisAngle(mCenter->LocalTransform.Up(), offX * delta));
+		mCenter->LocalTransform.Rotate(Quaternion::fromAxisAngle(mCenter->LocalTransform.Side(), offY * delta));
+	}
 
 	mCamera.LocalTransform.SetPosition(Vector3(0.0f, 0.0f, -mDistance));
-	mCamera.LocalTransform.Rotate(Quaternion::fromAxisAngle(mCamera.LocalTransform.Up(), offX * delta));
-	mCamera.LocalTransform.Rotate(Quaternion::fromAxisAngle(mCamera.LocalTransform.Side(), offY * delta));
 
 	// friction baby!
 	if (!mDragging)
