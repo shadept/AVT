@@ -9,8 +9,9 @@ enum class VertexAttributes
 {
 	POSITION = 0,
 	NORMAL = 1,
-	TEXCOORD = 2,
-	COLOR = 3
+	TANGENT = 2,
+	TEXCOORD = 3,
+	COLOR = 4
 };
 
 enum class ShaderType

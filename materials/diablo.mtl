@@ -1,0 +1,10 @@
+newmtl diablo
+Ka  0.0 0.0 0.0
+Kd  0.64 0.64 0.64
+Ks  0.0 0.0 0.0
+d  1.0
+Ns  96.078431
+illum 2
+map_Kd Diablo_diff.png
+map_Ks Diablo_spec.png
+bump Diablo_norm.png

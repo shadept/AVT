@@ -3,6 +3,8 @@
 
 #include "OpenGL.h"
 
+#include <vector>
+
 class Texture;
 
 struct TextureParser
@@ -21,13 +23,14 @@ public:
 	Texture();
 	~Texture();
 
+	void Load(const std::vector<unsigned char>& image, int width, int height);
 	void Load(const std::string& filename);
 
 	GLuint GetId() const;
 	unsigned GetWidth() const;
 	unsigned GetHeight() const;
 
-	void Bind() const;
+	void Bind(int unit) const;
 	void Unbind() const;
 
 private:

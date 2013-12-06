@@ -31,8 +31,8 @@ const Shader& Shader::Source(const std::string& src) const
 const Shader& Shader::Compile() const
 {
 	glCompileShader(mShader);
-	//bool success = checkInfoLog(mShader, GL_COMPILE_STATUS, glGetShaderiv, glGetShaderInfoLog);
-	//assert(success == true);
+	bool success = checkInfoLog(mShader, GL_COMPILE_STATUS, glGetShaderiv, glGetShaderInfoLog);
+	assert(success == true);
 	return (*this);
 }
 
@@ -242,6 +242,7 @@ bool ShaderLoader::Load(ShaderResource** resource, Handle handle, const std::str
 	shader->AttachShader(vs).AttachShader(fs);
 	shader->BindAttribute(VertexAttributes::POSITION, "in_Position");
 	shader->BindAttribute(VertexAttributes::NORMAL, "in_Normal");
+	shader->BindAttribute(VertexAttributes::TANGENT, "in_Tangent");
 	shader->BindAttribute(VertexAttributes::TEXCOORD, "in_TexCoords");
 	shader->Link();
 

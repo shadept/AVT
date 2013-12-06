@@ -38,16 +38,23 @@ class Mesh
 public:
 	typedef MeshParser::Vertice Vertice;
 	typedef MeshParser::Normal Normal;
+	typedef MeshParser::Normal Tangent;
 	typedef MeshParser::TexCoords TexCoords;
 
 	struct Vertex
 	{
 		Vertex(Vertice v, Normal n);
-		Vertex(Vertice v, Normal n, TexCoords t);
+		Vertex(Vertice v, Normal n, TexCoords tc);
 
-		float X, Y, Z;
-		float NX, NY, NZ;
-		float U, V;
+//		float X, Y, Z;
+//		float NX, NY, NZ;
+//		float TX, TY, TZ;
+//		float U, V;
+		Vector3 position;
+		Vector3 normal;
+		Vector3 tangent = {0.0f, 0.0f, 0.0f};
+		float U = 0.0f;
+		float V = 0.0f;
 	};
 
 	Mesh();

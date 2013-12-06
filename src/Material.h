@@ -24,9 +24,9 @@ struct MaterialParser
 		std::string SpecularCoeffMap; // map_Ns
 		std::string TransparencyMap; // map_d or map_Tr
 		std::string BumpMap; // map_bump or bump
-		float Ambient[3]; // Ka
-		float Diffuse[3]; // Kd
-		float Specular[3]; // Ks
+		Vector3 Ambient; // Ka
+		Vector3 Diffuse; // Kd
+		Vector3 Specular; // Ks
 		float SpecularCoeff; // Ns
 		float Transparency; // d or Tr
 		float RefractionIndex; // Ni
@@ -37,19 +37,18 @@ struct MaterialParser
 
 };
 
-class Material
+struct Material
 {
-public:
-	Material();
-	virtual ~Material();
-
-public:
-	Vector3 mAmbient;
-	Vector3 mDiffuse;
-	Vector3 mSpecular;
-	Texture* mTexture;
-	float mTransparency;
-	float mShininess;
+	Vector3 mAmbient = {0.2f, 0.2f, 0.2f};
+	Vector3 mDiffuse = {0.8f, 0.8f, 0.8f};
+	Vector3 mSpecular = {1.0f, 1.0f, 1.0f};
+	Texture* mAmbientMap = nullptr;
+	Texture* mDiffuseMap = nullptr;
+	Texture* mSpecularMap = nullptr;
+	Texture* mBumpMap = nullptr; // or normalmap
+	float mShininess = 0.0f;
+	float mTransparency = 1.0f;
+	float mRefraction = 1.0;
 };
 
 #include "Manager.h"

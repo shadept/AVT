@@ -120,7 +120,7 @@ inline Handle ResourceManager<Resource, Loader>::Load(const std::string& name, c
 	Resource* resource = GetElement(name);
 	if (resource != NULL)
 	{
-		Logger::Warning << name << " already in manager" << Logger::endl;
+		Logger::Info << name << " already in manager" << Logger::endl;
 		return resource->GetHandle();
 	}
 	resource = NULL;
@@ -140,20 +140,28 @@ inline Handle ResourceManager<Resource, Loader>::Load(const std::string& name, c
 		// TODO return default resource of this type (e.g., default texture, default mesh...)
 	}
 
-	assert(resource != NULL && "Failed to load resource");
-	resource->mName = name;
-
-	if (available)
+	if (resource != NULL)
 	{
-		mHandles.pop(); // removes handle from stack
-		mList[handle] = resource;
+		resource->mName = name;
+
+		if (available)
+		{
+			mHandles.pop(); // removes handle from stack
+			mList[handle] = resource;
+		}
+		else
+		{
+			mList.push_back(resource);
+		}
+
+		return handle;
 	}
 	else
 	{
-		mList.push_back(resource);
+		Logger::Info << "Finished loading resource collection " << name << Logger::endl;
 	}
 
-	return handle;
+	return -1;
 }
 
 template<typename Resource, typename Loader>
@@ -165,7 +173,7 @@ inline Handle ResourceManager<Resource, Loader>::Add(const std::string& name, ty
 	Resource* resource = GetElement(name);
 	if (resource != NULL)
 	{
-		Logger::Warning << name << " already in manager" << Logger::endl;
+		Logger::Info << name << " already in manager" << Logger::endl;
 		return resource->GetHandle();
 	}
 	resource = NULL;
@@ -184,7 +192,7 @@ inline Handle ResourceManager<Resource, Loader>::Add(const std::string& name, ty
 	resource = new Resource(handle, name);
 	resource->mRaw = raw;
 
-	assert(resource != NULL && "failed to load resource");
+	assert(resource != NULL && "failed to add resource");
 
 	if (available)
 		mList[handle] = resource;

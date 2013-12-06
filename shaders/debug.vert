@@ -2,14 +2,25 @@
 
 in vec3 in_Position;
 in vec3 in_Normal;
+in vec3 in_Tangent;
+in vec2 in_TexCoords;
 
-out vec4 ex_Color;
-
+uniform mat4 NormalMatrix;
+uniform mat4 ModelViewMatrix;
 uniform mat4 ModelViewProjectionMatrix;
+
+out vec3 exVertex;
+out vec3 exNormal;
+out vec3 exTangent;
+out vec2 exTexCoords;
 
 void main(void)
 {
-	ex_Color = vec4((normalize(in_Normal) + vec3(1.0)) / 2.0, 1.0);
-	// ex_Color = vec4((in_Position + vec3(1.0)) / 2.0, 1.0);
-	gl_Position = ModelViewProjectionMatrix * vec4(in_Position, 1.0);
+	exVertex = vec3(ModelViewMatrix * vec4(in_Position, 1.0));
+	// exNormal = vec3(NormalMatrix * vec4(in_Normal, 0.0));
+	exNormal = in_Normal;
+	exTangent = vec3(NormalMatrix * vec4(in_Tangent, 0.0));
+	exTexCoords = in_TexCoords;
+
+	gl_Position = ModelViewProjectionMatrix *  vec4(in_Position, 1.0);
 }

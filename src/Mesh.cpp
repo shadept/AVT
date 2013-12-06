@@ -4,6 +4,8 @@
 #include <fstream>
 #include <sstream>
 
+#include "Shader.h"
+
 IMPLEMENT_MANAGER(Mesh);
 
 void MeshParser::Load(Mesh* mesh, std::istream& input)
@@ -11,6 +13,7 @@ void MeshParser::Load(Mesh* mesh, std::istream& input)
 	std::vector<Vertice> vertices;
 	std::vector<TexCoords> uvs;
 	std::vector<Normal> normals;
+	std::vector<Normal> tangents;
 	std::vector<Face> faces;
 	std::string line;
 
@@ -33,6 +36,7 @@ void MeshParser::Load(Mesh* mesh, std::istream& input)
 		{
 			TexCoords uv;
 			ss >> uv.u >> uv.v;
+			uv.v = 1.0f - uv.v; // hack
 			uvs.push_back(uv);
 		}
 		else if (tag == "vn")
@@ -91,26 +95,32 @@ void MeshParser::Load(Mesh* mesh, std::istream& input)
 
 Mesh::Vertex::Vertex(Vertice v, Normal n)
 {
-	X = v.x;
-	Y = v.y;
-	Z = v.z;
-	NX = n.x;
-	NY = n.y;
-	NZ = n.z;
-	U = 0;
-	V = 0;
+//	X = v.x;
+//	Y = v.y;
+//	Z = v.z;
+//	NX = n.x;
+//	NY = n.y;
+//	NZ = n.z;
+	position =
+	{	v.x, v.y, v.z};
+	normal =
+	{	n.x, n.y, n.z};
 }
 
-Mesh::Vertex::Vertex(Vertice v, Normal n, TexCoords t)
+Mesh::Vertex::Vertex(Vertice v, Normal n, TexCoords tc)
 {
-	X = v.x;
-	Y = v.y;
-	Z = v.z;
-	NX = n.x;
-	NY = n.y;
-	NZ = n.z;
-	U = t.u;
-	V = t.v;
+//	X = v.x;
+//	Y = v.y;
+//	Z = v.z;
+//	NX = n.x;
+//	NY = n.y;
+//	NZ = n.z;
+	position =
+	{	v.x, v.y, v.z};
+	normal =
+	{	n.x, n.y, n.z};
+	U = tc.u;
+	V = tc.v;
 }
 
 Mesh::Mesh() :
@@ -132,6 +142,36 @@ Mesh::~Mesh()
 
 void Mesh::Load(std::vector<Vertex> vertexData)
 {
+	// generate tangent data
+	for (unsigned int i = 0; i < vertexData.size(); i += 3)
+	{
+		Vertex& v0 = vertexData[i];
+		Vertex& v1 = vertexData[i+1];
+		Vertex& v2 = vertexData[i+2];
+
+		Vector3 e1 = v1.position - v0.position;
+		Vector3 e2 = v2.position - v0.position;
+
+		float dU1 = v1.U - v0.U;
+		float dV1 = v1.V - v0.V;
+		float dU2 = v2.U - v0.U;
+		float dV2 = v2.V - v0.V;
+
+		float f = 1.0f / (dU1 * dV2 - dU2 * dV1);
+
+		Vector3 tangent;
+		tangent.X = f * (dV2 * e1.X - dV1 * e2.X);
+		tangent.Y = f * (dV2 * e1.Y - dV1 * e2.Y);
+		tangent.Z = f * (dV2 * e1.Z - dV1 * e2.Z);
+
+		v0.tangent += tangent;
+		v1.tangent += tangent;
+		v2.tangent += tangent;
+	}
+
+	for (auto& vert : vertexData)
+		vert.tangent.normalize();
+
 	assert(mVertexArrayId == 0 && "mesh data already loaded");
 	glGenVertexArrays(1, &mVertexArrayId);
 	glBindVertexArray(mVertexArrayId);
@@ -142,14 +182,17 @@ void Mesh::Load(std::vector<Vertex> vertexData)
 	glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(Vertex), &vertexData[0], GL_STATIC_DRAW);
 	checkOpenGLError("Failed to copy vertex data");
 
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
+	glEnableVertexAttribArray((GLuint)VertexAttributes::POSITION);
+	glVertexAttribPointer((GLuint)VertexAttributes::POSITION, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
 
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*) sizeof(Vertice));
+	glEnableVertexAttribArray((GLuint)VertexAttributes::NORMAL);
+	glVertexAttribPointer((GLuint)VertexAttributes::NORMAL, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*) sizeof(Vector3));
 
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*) (sizeof(Vertice) + sizeof(Normal)));
+	glEnableVertexAttribArray((GLuint)VertexAttributes::TANGENT);
+	glVertexAttribPointer((GLuint)VertexAttributes::TANGENT, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*) (2 * (sizeof(Vector3))));
+
+	glEnableVertexAttribArray((GLuint)VertexAttributes::TEXCOORD);
+	glVertexAttribPointer((GLuint)VertexAttributes::TEXCOORD, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*) (3 * (sizeof(Vector3))));
 	checkOpenGLError("Failed to enable vertex attributes");
 
 	glBindVertexArray(0);
@@ -157,7 +200,7 @@ void Mesh::Load(std::vector<Vertex> vertexData)
 
 	// find center of mass
 	for (auto& v : vertexData)
-		mCenterOfMass += Vector3(v.X, v.Y, v.Z);
+		mCenterOfMass += v.position;
 
 	mCenterOfMass = mCenterOfMass * (1.0f / mCount);
 }

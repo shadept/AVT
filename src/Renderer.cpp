@@ -5,6 +5,7 @@
 #include "Camera.h"
 #include "Node.h"
 #include "Geometry.h"
+#include "Material.h"
 #include "Light.h"
 
 std::string readFile(const std::string& filename);
@@ -17,13 +18,9 @@ Renderer::Renderer() :
 	mLighting = true;
 	mNeedLightUpdate = true;
 
-	mDefaultMaterial = new Material();
-	mDefaultMaterial->mAmbient = Vector3(1.0f, 0.0f, 1.0f);
-	mDefaultMaterial->mDiffuse = Vector3(1.0f, 0.0f, 1.0f);
-	mDefaultMaterial->mSpecular = Vector3(1.0f, 0.0f, 1.0f);
-	mDefaultMaterial->mShininess = 0.0f;
-
-	MaterialManager.Add("default", mDefaultMaterial);
+	// load default materials
+	MaterialManager.Load("default_material", "./materials/default.mtl");
+	mDefaultMaterial = MaterialManager["default"]->GetRaw();
 
 	Handle debug = ShaderManager.Load("debug", "./shaders/debug.vert", "./shaders/debug.frag");
 	Handle noLight = ShaderManager.Load("noligth", "./shaders/simple.vert", "./shaders/simple.frag");
@@ -35,9 +32,13 @@ Renderer::Renderer() :
 	mRealisticShader = ShaderManager[realistic]->GetRaw();
 	mSpecularShader = ShaderManager[specular]->GetRaw();
 
-
 	mDebugging = false;
 	mShader = mRealisticShader;
+
+	std::vector<unsigned char> white(4);
+	white[0] = white[1] = white[2] = white[3] = 0xFF;
+	mWhiteTexture = new Texture();
+	mWhiteTexture->Load(white, 1, 1);
 }
 
 Renderer::~Renderer()
@@ -153,7 +154,8 @@ void Renderer::SetLighting(bool on)
 void Renderer::DrawScene(Node* scene)
 {
 	assert(mCamera && "Renderer must have a camera attached");
-	if (scene) {
+	if (scene)
+	{
 		// mLight = nullptr;
 		//TODO create list of object to draw, and sort them from back to front
 		scene->Draw(*this);
@@ -174,25 +176,25 @@ void Renderer::DrawScene(Node* scene)
 			for (auto* geo : mTransparentList)
 				Draw(geo, true);
 
+			SetLighting(lighting);
 			// with the depth buffer filled, polygon sorting is free
 			glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 			for (auto* geo : mTransparentList)
 				Draw(geo, true);
 
-			SetLighting(lighting);
-
-			// TODO specular hightlight
-			glDepthFunc(GL_EQUAL); // TODO move to context
-			for (auto* geo : mTransparentList)
-			{
-				const Material* mat = geo->GetMaterial();
-				Material specularMat = *mat;
-				specularMat.mAmbient = {};
-				specularMat.mDiffuse = {};
-				geo->SetMaterial(&specularMat);
-				Draw(geo, true);
-				geo->SetMaterial(mat);
-			}
+			// FIXME specular highlight is drawing color on the material
+			// it should only draw the specular contribution, maybe need itś own shader
+//			glDepthFunc(GL_EQUAL); // TODO move to context
+//			for (auto* geo : mTransparentList)
+//			{
+//				const Material* mat = geo->GetMaterial();
+//				Material specularMat = *mat;
+//				specularMat.mAmbient = {};
+//				specularMat.mDiffuse = {};
+//				geo->SetMaterial(&specularMat);
+//				Draw(geo, true);
+//				geo->SetMaterial(mat);
+//			}
 
 			glDepthFunc(GL_LEQUAL);
 			glDisable(GL_BLEND);
@@ -275,7 +277,8 @@ void Renderer::Draw(const Light* light)
 
 void Renderer::Bind(const Light* light, const Program* shader)
 {
-	if (mLighting == false) {
+	if (mLighting == false)
+	{
 		return;
 	}
 
@@ -291,20 +294,35 @@ void Renderer::Bind(const Light* light, const Program* shader)
 
 void Renderer::Bind(const Material* material, const Program* shader)
 {
-	if (material->mTexture != NULL)
-	{
-		material->mTexture->Bind();
-		Uniform::Bind(*shader, "MaterialHasTexture", GL_TRUE);
-	}
-	else
-	{
-		Uniform::Bind(*shader, "MaterialHasTexture", GL_FALSE);
-	}
-	Uniform::Bind(*shader, "MaterialTexture", 0); // GL_TEXTURE0
+	if (material->mAmbientMap != NULL) material->mAmbientMap->Bind(0);
+	else mWhiteTexture->Bind(0);
+	if (material->mDiffuseMap != NULL) material->mDiffuseMap->Bind(1);
+	else mWhiteTexture->Bind(1);
+	if (material->mSpecularMap != NULL) material->mSpecularMap->Bind(2);
+	else mWhiteTexture->Bind(2);
+	if (material->mBumpMap != NULL) material->mBumpMap->Bind(3);
+	else mWhiteTexture->Bind(3);
+
+
+	Uniform::Bind(*shader, "MaterialAmbientTexture", 0); // GL_TEXTURE0
+	Uniform::Bind(*shader, "MaterialDiffuseTexture", 1); // GL_TEXTURE1
+	Uniform::Bind(*shader, "MaterialSpecularTexture", 2); // GL_TEXTURE2
+	Uniform::Bind(*shader, "MaterialBumpTexture", 3); // GL_TEXTURE3
+
 	Uniform::Bind(*shader, "MaterialAmbientColor", material->mAmbient);
-	Uniform::Bind(*shader, "MaterialDiffuseColor",  material->mDiffuse);
-	Uniform::Bind(*shader, "MaterialSpecularColor",  material->mSpecular);
-	Uniform::Bind(*shader, "MaterialShininess",  material->mShininess * 128.0f);
+	Uniform::Bind(*shader, "MaterialDiffuseColor", material->mDiffuse);
+	Uniform::Bind(*shader, "MaterialSpecularColor", material->mSpecular);
+//	Uniform::Bind(*shader, "MaterialShininess",  material->mShininess * 128.0f);
+	Uniform::Bind(*shader, "MaterialShininess", material->mShininess);
 	Uniform::Bind(*shader, "MaterialTransparency", material->mTransparency);
 	checkOpenGLError("Failed to bind material");
+
+//	glActiveTexture(GL_TEXTURE0);
+//	glDisable(GL_TEXTURE_2D);
+//	glActiveTexture(GL_TEXTURE1);
+//	glDisable(GL_TEXTURE_2D);
+//	glActiveTexture(GL_TEXTURE2);
+//	glDisable(GL_TEXTURE_2D);
+//	glActiveTexture(GL_TEXTURE3);
+//	glDisable(GL_TEXTURE_2D);
 }
