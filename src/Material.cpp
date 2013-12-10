@@ -12,12 +12,16 @@ MaterialParser::MaterialDefinition::MaterialDefinition()
 
 void MaterialParser::MaterialDefinition::Reset()
 {
-	Ambient =
-	{	0.2f, 0.2f, 0.2f};
-	Diffuse =
-	{	0.8f, 0.8f, 0.8f};
-	Specular =
-	{	1.0f, 1.0f, 1.0f};
+	Name = "";
+	AmbientMap = "";
+	DiffuseMap = "";
+	SpecularMap = "";
+	SpecularCoeffMap = "";
+	TransparencyMap = "";
+	BumpMap  = "";
+	Ambient = { 0.2f, 0.2f, 0.2f};
+	Diffuse = { 0.8f, 0.8f, 0.8f};
+	Specular = { 1.0f, 1.0f, 1.0f};
 	SpecularCoeff = 0.0f;
 	Transparency = 1.0f;
 	RefractionIndex = 1.0f;
