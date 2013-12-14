@@ -144,3 +144,23 @@ std::ostream& operator <<(std::ostream& os, const Vector3& v)
 	os << "(" << v[0] << ",\t" << v[1] << ",\t" << v[2] << ")";
 	return os;
 }
+
+Vector4::Vector4() :
+				X(0), Y(0), Z(0), W(0)
+{
+}
+
+Vector4::Vector4(Real x, Real y, Real z, Real w) :
+				X(x), Y(y), Z(z), W(w)
+{
+}
+
+const Real* Vector4::get() const
+{
+	return &X;
+}
+
+Vector4::operator const Real*() const
+{
+	return &X;
+}

@@ -17,6 +17,46 @@ Quaternion Quaternion::fromAxisAngle(const Vector3& axis, Real angle)
 	return q;
 }
 
+Quaternion Quaternion::fromMatrix(const Matrix4& m)
+{
+	Quaternion rotation;
+	float trace = m[0] + m[5] + m[10];
+	if (trace > 0)
+	{
+		Real s = 0.5f / (1.0f + trace);
+		rotation.T = 0.25f / s;
+		rotation.X = (m(2,1) - m(1,2)) * s;
+		rotation.Y = (m(0,2) - m(2,0)) * s;
+		rotation.Z = (m(1,0) - m(0,1)) * s;
+	}
+	else if (m[0] > m[5] && m[0] > m[10])
+	{
+		Real s = 0.5f / (1.0f + m[0] - m[5] - m[10]);
+		rotation.T = (m(2,1) - m(1,2)) * s;
+		rotation.X = 0.25f / s;
+		rotation.Y = (m(0,1) + m(1,0)) * s;
+		rotation.Z = (m(0,2) + m(2,0)) * s;
+	}
+	else if (m[5] > m[10])
+	{
+		Real s = 0.5f / (1.0f - m[0] + m[5] - m[10]);
+		rotation.T = (m(0,2) - m(2,0)) * s;
+		rotation.X = (m(0,1) + m(1,0)) * s;
+		rotation.Y = 0.25f / s;
+		rotation.Z = (m(1,2) + m(2,1)) * s;
+	}
+	else
+	{
+		Real s = 0.5f / (1.0f - m[0] - m[5] + m[10]);
+		rotation.T = (m(1,0) - m(0,1)) * s;
+		rotation.X = (m(0,2) + m(2,0)) * s;
+		rotation.Y = (m(1,2) + m(2,1)) * s;
+		rotation.Z = 0.25f / s;
+	}
+
+	return rotation;
+}
+
 Quaternion::Quaternion()
 {
 	makeIdentity();

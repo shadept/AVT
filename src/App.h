@@ -21,7 +21,8 @@ public:
 	void OnUpdate(const Real delta);
 
 private:
-	int mFPS;
+	int mFPS, mTotalFrames;
+	float mTotalTime;
 
 	Node mWorld;
 
@@ -34,7 +35,7 @@ private:
 
 	bool mDragging, mFriction;
 	bool mDebug;
-	bool mMovingSphere = false;
+	bool mMovingSphere = true;
 	int mMaterial;
 
 	Node* mCenter;

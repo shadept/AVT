@@ -13,6 +13,10 @@ public:
 
 	void OnDraw(Renderer& renderer) const;
 
+	void SetViewport(int width, int height);
+	int GetWidth() const;
+	int GetHeight() const;
+
 	const Matrix4& GetProjection() const;
 	Matrix4 GetProjection();
 	Matrix4 GetViewProjection() const;
@@ -25,6 +29,7 @@ public:
 
 private:
 	Matrix4 mProjection;
+	int mWidth, mHeight;
 
 	// cached values
 	mutable Matrix4 mViewProj;

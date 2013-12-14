@@ -16,7 +16,7 @@ template<typename T>
 inline Logger_& Logger_::operator <<(const T& value)
 {
 #ifdef NDEBUG
-	if(mLevel != DEBUG)
+	if(mLevel != LogLevel::DEBUG)
 	{
 #endif
 		static std::string levels[(unsigned) LogLevel::MAX_LEVEL] = { "INFO", "DEBUG", "WARNING", "ERROR", "FATAL" };
@@ -35,7 +35,7 @@ inline Logger_& Logger_::operator <<(const T& value)
 inline Logger_& Logger_::operator <<(const struct endl_t&)
 {
 #ifdef NDEBUG
-	if(mLevel != DEBUG)
+	if(mLevel != LogLevel::DEBUG)
 	{
 #endif
 		if (mNewLine == false)

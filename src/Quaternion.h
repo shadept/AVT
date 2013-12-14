@@ -7,6 +7,7 @@ class Quaternion
 {
 public:
 	static Quaternion fromAxisAngle(const Vector3& axis, Real angle);
+	static Quaternion fromMatrix(const Matrix4& mat);
 
 public:
 	Quaternion();

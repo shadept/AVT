@@ -9,6 +9,7 @@ Camera::Camera(const std::string& name) :
 	Spatial(name)
 {
 	mIsDirty = true;
+	mWidth = mHeight = 0;
 }
 
 Camera::~Camera()
@@ -18,6 +19,23 @@ Camera::~Camera()
 void Camera::OnDraw(Renderer& renderer) const
 {
 	// debug draw
+}
+
+void Camera::SetViewport(int width, int height)
+{
+	glViewport(0, 0, width, height);
+	mWidth = width;
+	mHeight = height;
+}
+
+int Camera::GetWidth() const
+{
+	return mWidth;
+}
+
+int Camera::GetHeight() const
+{
+	return mHeight;
 }
 
 const Matrix4& Camera::GetProjection() const
@@ -84,19 +102,25 @@ void Camera::SetLookAt(const Vector3& eye, const Vector3& center, const Vector3&
 	v = -v; // forward is -AxisZ
 	Vector3 position(-s & eye, -u & eye, -v & eye);
 
+	Matrix4 lookAt{s, u, v};
+	lookAt[3] = position.X;
+	lookAt[7] = position.Y;
+	lookAt[11] = position.Z;
+
 	Quaternion rotation;
-	rotation.T = Math::sqrt(1.0f + s.X + u.Y + v.Z) * 0.5f;
-	if (rotation.T != 0)
-	{
-		Real w4_recip = 1.0f / (4.0f * rotation.T);
-		rotation.X = (v.Y - u.Z) * w4_recip;
-		rotation.Y = (s.Z - v.X) * w4_recip;
-		rotation.Z = (u.X - s.Y) * w4_recip;
-	}
-	else
-	{
-		rotation.makeIdentity();
-	}
+//	rotation.T = Math::sqrt(1.0f + s.X + u.Y + v.Z) * 0.5f;
+//	if (rotation.T != 0)
+//	{
+//		Real w4_recip = 1.0f / (4.0f * rotation.T);
+//		rotation.X = (v.Y - u.Z) * w4_recip;
+//		rotation.Y = (s.Z - v.X) * w4_recip;
+//		rotation.Z = (u.X - s.Y) * w4_recip;
+//	}
+//	else
+//	{
+//		rotation.makeIdentity();
+//	}
+	rotation = Quaternion::fromMatrix(lookAt);
 
 	LocalTransform.SetPosition(position);
 	LocalTransform.SetRotation(rotation);

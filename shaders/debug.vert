@@ -19,7 +19,8 @@ void main(void)
 	exVertex = vec3(ModelViewMatrix * vec4(in_Position, 1.0));
 	// exNormal = vec3(NormalMatrix * vec4(in_Normal, 0.0));
 	exNormal = in_Normal;
-	exTangent = vec3(NormalMatrix * vec4(in_Tangent, 0.0));
+	// exTangent = vec3(NormalMatrix * vec4(in_Tangent, 0.0));
+	exTangent = in_Tangent;
 	exTexCoords = in_TexCoords;
 
 	gl_Position = ModelViewProjectionMatrix *  vec4(in_Position, 1.0);

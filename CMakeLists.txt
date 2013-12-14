@@ -28,6 +28,7 @@ file(GLOB AVT_HEADERS src/*.h)
 file(COPY shaders/ DESTINATION shaders/)
 file(COPY models/ DESTINATION models/)
 file(COPY textures/ DESTINATION textures/)
+file(COPY materials/ DESTINATION materials/)
 
 add_executable(${PROJECT_NAME} ${AVT_SOURCES} ${AVT_HEADERS})
 target_link_libraries(${PROJECT_NAME} -lstdc++ -lm -lglut -lGLU -lGL -lGLEW)

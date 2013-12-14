@@ -21,9 +21,13 @@ public:
 	void SetMesh(const Mesh* mesh) { mMesh = mesh; }
 	const Mesh* GetMesh() const { return mMesh; }
 
+	void SetShader(const Program* shader) { mShader = shader; }
+	const Program* GetShader() const { return mShader; }
+
 private:
-	const Mesh* mMesh;
-	const Material* mMaterial;
+	const Mesh* mMesh = NULL;
+	const Material* mMaterial = NULL;
+	const Program* mShader = NULL;
 
 public:
 	Vector3 color;

@@ -15,6 +15,7 @@ class Node;
 class Geometry;
 class Camera;
 class Texture;
+class Cubemap;
 
 class Renderer
 {
@@ -28,10 +29,18 @@ public:
 
 	int Pick(Node* node, int x, int y);
 	Vector3 Unproject(int x, int y);
+	void BuildEnvironmentMap(Node* scene, const Vector3& center);
 
 	////////////////////////// DRAWING SCENE //////////////////////////////
 
-	void SetDebug(bool on);
+	enum DebugShader {
+		NONE,
+		NORMALS,
+		DEPTH,
+		MAX_DEBUG
+	};
+
+	void SetDebug(DebugShader type);
 	void SetCamera(Camera* camera);
 	void SetGlobalShader(const Program* shader);
 	void SetLighting(bool on);
@@ -50,11 +59,13 @@ private:
 
 	// Render specific variables
 	Material* mDefaultMaterial;
-	Program* mDebugShader;
+	Program* mDebugShaderNormals, * mDebugShaderDepth;
 	Program* mNoLightShader;
 	Program* mRealisticShader;
 	Program* mSpecularShader;
 	Texture* mWhiteTexture;
+	Cubemap* mCubemap;
+	Cubemap* mSkybox;
 
 	// Other variables
 	const Program* mShader, *mPickingShader;

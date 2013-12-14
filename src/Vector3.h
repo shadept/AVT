@@ -55,6 +55,19 @@ public:
 	static Vector3 AxisX, AxisY, AxisZ;
 };
 
+class Vector4
+{
+public:
+	Vector4();
+	Vector4(Real x, Real y, Real z, Real w);
+
+	const Real* get() const;
+	operator const Real*() const;
+
+public:
+	Real X, Y, Z, W;
+};
+
 Vector3 operator *(Real a, const Vector3& v);
 std::ostream& operator<<(std::ostream& os, const Vector3& v);
 

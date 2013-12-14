@@ -53,7 +53,8 @@ void Window::Resize(int width, int height)
 	//mContext->Bind();
 	mWidth = width;
 	mHeight = height;
-	glViewport(0, 0, width, height);
+//	glViewport(0, 0, width, height);
+	// TODO change window size, not viewport size
 }
 
 void Window::SetTitle(const std::string& title)

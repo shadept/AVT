@@ -17,6 +17,7 @@ public:
 public:
 	Matrix4();
 	Matrix4(const Real src[16]);
+	Matrix4(const Vector3& row0, const Vector3& row1, const Vector3& row2);
 	Matrix4(Real xx, Real xy, Real xz, Real xw, Real yx, Real yy, Real yz, Real yw, Real zx, Real zy, Real zz, Real zw,
 			Real wx, Real wy, Real wz, Real ww);
 

@@ -69,6 +69,11 @@ Matrix4::Matrix4(const Real src[16])
 	set(src);
 }
 
+Matrix4::Matrix4(const Vector3& row0, const Vector3& row1, const Vector3& row2)
+{
+	set(row0.X, row0.Y, row0.Z, 0.0f, row1.X, row1.Y, row1.Z, 0.0f, row2.X, row2.Y, row2.Z, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+}
+
 Matrix4::Matrix4(Real xx, Real xy, Real xz, Real xw, Real yx, Real yy, Real yz, Real yw, Real zx, Real zy, Real zz,
 		Real zw, Real wx, Real wy, Real wz, Real ww)
 {

@@ -22,12 +22,15 @@ Renderer::Renderer() :
 	MaterialManager.Load("default_material", "./materials/default.mtl");
 	mDefaultMaterial = MaterialManager["default"]->GetRaw();
 
-	Handle debug = ShaderManager.Load("debug", "./shaders/debug.vert", "./shaders/debug.frag");
+	Handle debugNormals = ShaderManager.Load("_normals", "./shaders/debug.vert", "./shaders/debug.frag");
+	Handle debugDepth = ShaderManager.Load("_depth", "./shaders/simple.vert", "./shaders/depth.frag");
 	Handle noLight = ShaderManager.Load("noligth", "./shaders/simple.vert", "./shaders/simple.frag");
 	Handle realistic = ShaderManager.Load("realistic", "./shaders/simple.vert", "./shaders/realistic.frag");
 	Handle specular = ShaderManager.Load("specular", "./shaders/simple.vert", "./shaders/specular.frag");
+	Handle skybox = ShaderManager.Load("skybox", "./shaders/skybox.vert", "./shaders/skybox.frag");
 
-	mDebugShader = ShaderManager[debug]->GetRaw();
+	mDebugShaderNormals = ShaderManager[debugNormals]->GetRaw();
+	mDebugShaderDepth = ShaderManager[debugDepth]->GetRaw();
 	mNoLightShader = ShaderManager[noLight]->GetRaw();
 	mRealisticShader = ShaderManager[realistic]->GetRaw();
 	mSpecularShader = ShaderManager[specular]->GetRaw();
@@ -39,6 +42,13 @@ Renderer::Renderer() :
 	white[0] = white[1] = white[2] = white[3] = 0xFF;
 	mWhiteTexture = new Texture();
 	mWhiteTexture->Load(white, 1, 1);
+
+	mSkybox = new Cubemap();
+	mSkybox->Load("./textures/skybox");
+	Logger::Debug << "Loaded cube map" << Logger::endl;
+
+	mCubemap = new Cubemap();
+	mCubemap->Load(1024, 1024);
 }
 
 Renderer::~Renderer()
@@ -111,19 +121,76 @@ Vector3 Renderer::Unproject(int x, int y)
 	return Vector3(posX, posY, posZ);
 }
 
+void Renderer::BuildEnvironmentMap(Node* scene, const Vector3& center)
+{
+	assert(scene != NULL && "cannot built environment map from null scene");
+
+	GLuint framebuffer = 0, depthbuffer = 0;
+	glGenFramebuffers(1, &framebuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X, mCubemap->ID(), 0);
+
+	glGenRenderbuffers(1, &depthbuffer);
+	glBindRenderbuffer(GL_RENDERBUFFER, depthbuffer);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 2048, 2048);
+
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthbuffer);
+
+	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	assert(status == GL_FRAMEBUFFER_COMPLETE && "failed to create framebuffer");
+
+	static Vector3 lookAt[] = { {1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1} };
+	static Vector3 up[] = { {0, -1, 0}, {0, -1, 0}, {1, 0, 0}, {1, 0, 0}, {0, -1, 0}, {0, -1, 0} };
+	Camera camera = *mCamera;
+	mCamera->SetFustrum(90.0f, 1.0f, 1.0f, 1000.0f);
+	mCamera->SetViewport(1024, 1024);
+
+	bool lighting = mLighting;
+	SetLighting(false);
+	for (int i = 0; i < 6; i++)
+	{
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, mCubemap->ID(), 0);
+		status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		assert(status == GL_FRAMEBUFFER_COMPLETE && "failed to create framebuffer");
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		mCamera->SetLookAt(center, center + lookAt[i], up[i]);
+		scene->Draw(*this);
+		mTransparentList.clear();
+	}
+	SetLighting(lighting);
+
+	*mCamera = camera;
+
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glDeleteRenderbuffers(1, &depthbuffer);
+	glDeleteFramebuffers(1, &framebuffer);
+
+	mCamera->SetViewport(mCamera->GetWidth(), mCamera->GetHeight());
+}
+
 ////////////////////////// DRAWING SCENE //////////////////////////////
 
-void Renderer::SetDebug(bool on)
+void Renderer::SetDebug(DebugShader type)
 {
-	mDebugging = on;
-	if (on)
+	mDebugging = (type == 0 ? false : true);
+	switch (type)
 	{
-		mShader = mDebugShader;
-	}
-	else
-	{
+	case 0:
 		mShader = (mLighting ? mRealisticShader : mNoLightShader);
 		mNeedLightUpdate = true;
+		break;
+	case 1:
+		mShader = mDebugShaderNormals;
+		break;
+	case 2:
+		mShader = mDebugShaderDepth;
+		break;
+	default:
+		break;
 	}
 }
 
@@ -156,48 +223,20 @@ void Renderer::DrawScene(Node* scene)
 	assert(mCamera && "Renderer must have a camera attached");
 	if (scene)
 	{
+
 		// mLight = nullptr;
 		//TODO create list of object to draw, and sort them from back to front
 		scene->Draw(*this);
 
 		if (mTransparentList.size() > 0 && !mDebugging)
 		{
-			bool lighting = mLighting;
-			SetLighting(false);
+//			glEnable(GL_BLEND);
+//			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-			glEnable(GL_BLEND);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-			// Logger::Debug << "Drawing transparent objects" << Logger::endl;
-			// TODO order from back to front
-
-			// fill depth buffer
-			glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 			for (auto* geo : mTransparentList)
 				Draw(geo, true);
 
-			SetLighting(lighting);
-			// with the depth buffer filled, polygon sorting is free
-			glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-			for (auto* geo : mTransparentList)
-				Draw(geo, true);
-
-			// FIXME specular highlight is drawing color on the material
-			// it should only draw the specular contribution, maybe need itś own shader
-//			glDepthFunc(GL_EQUAL); // TODO move to context
-//			for (auto* geo : mTransparentList)
-//			{
-//				const Material* mat = geo->GetMaterial();
-//				Material specularMat = *mat;
-//				specularMat.mAmbient = {};
-//				specularMat.mDiffuse = {};
-//				geo->SetMaterial(&specularMat);
-//				Draw(geo, true);
-//				geo->SetMaterial(mat);
-//			}
-
-			glDepthFunc(GL_LEQUAL);
-			glDisable(GL_BLEND);
+//			glDisable(GL_BLEND);
 		}
 		mTransparentList.clear();
 	}
@@ -211,11 +250,12 @@ void Renderer::Draw(Geometry* geometry, bool overrideTransparency)
 	const Material* material = geometry->GetMaterial() ? geometry->GetMaterial() : mDefaultMaterial;
 	if (material->mTransparency < 1.0f && overrideTransparency == false && !mDebugging)
 	{
-		// Logger::Debug << "Transparent material, saving for later" << Logger::endl;
+//		Logger::Debug << "Transparent material, saving for later" << Logger::endl;
 		mTransparentList.push_back(geometry);
 		return;
 	}
 
+	const Program* shader = (geometry->GetShader() != NULL ? geometry->GetShader() : mShader);
 	geometry->GetMesh()->Bind();
 	checkOpenGLError("Failed to bind mesh");
 
@@ -240,24 +280,29 @@ void Renderer::Draw(Geometry* geometry, bool overrideTransparency)
 	}
 	else
 	{
-		if (mShader == NULL)
+		if (shader == NULL)
 			Logger::Fatal << "Cannot bind NULL shader" << Logger::endl;
 
-		mShader->Use();
-		Uniform::Bind(*mShader, "NormalMatrix", NormalMatrix);
-		Uniform::Bind(*mShader, "ModelMatrix", ModelMatrix);
-		Uniform::Bind(*mShader, "ViewMatrix", ViewMatrix);
-		Uniform::Bind(*mShader, "ProjectionMatrix", ProjectionMatrix);
-		Uniform::Bind(*mShader, "ModelViewMatrix", ModelViewMatrix);
-		Uniform::Bind(*mShader, "ModelViewProjectionMatrix", ModelViewProjectionMatrix);
+		shader->Use();
+//		Uniform::Bind(*shader, "CameraPosition", mCamera->WorldTransform.Orientation() * mCamera->WorldTransform.Position());
+		Uniform::Bind(*shader, "NormalMatrix", NormalMatrix);
+		Uniform::Bind(*shader, "ModelMatrix", ModelMatrix);
+		Uniform::Bind(*shader, "ViewMatrix", ViewMatrix);
+		Uniform::Bind(*shader, "ProjectionMatrix", ProjectionMatrix);
+		Uniform::Bind(*shader, "ModelViewMatrix", ModelViewMatrix);
+		Uniform::Bind(*shader, "ModelViewProjectionMatrix", ModelViewProjectionMatrix);
+		mCubemap->Bind(4);
+		mSkybox->Bind(5);
+		Uniform::Bind(*shader, "environment.map", 4); // GL_TEXTURE4
+		Uniform::Bind(*shader, "environment.skybox", 5); // GL_TEXTURE5
 		checkOpenGLError("Failed to bind matrixes");
 
-		Bind(geometry->GetMaterial(), mShader);
+		Bind(geometry->GetMaterial(), shader);
 
 		if (mNeedLightUpdate)
 		{
 			// Logger::Debug << "Updating Lighting" << Logger::endl;
-			Bind(mLight, mShader);
+			Bind(mLight, shader);
 			mNeedLightUpdate = false;
 		}
 	}
@@ -286,35 +331,44 @@ void Renderer::Bind(const Light* light, const Program* shader)
 
 	light->UpdateTransformation();
 	const Vector3& position = light->LocalTransform.Position();
-	Uniform::Bind(*shader, "LightPosition", position);
-	Uniform::Bind(*shader, "LightAmbientColor", light->mAmbientColor);
-	Uniform::Bind(*shader, "LightDiffuseColor", light->mDiffuseColor);
-	Uniform::Bind(*shader, "LightSpecularColor", light->mSpecularColor);
+	Uniform::Bind(*shader, "lightSource.position", Vector4(position.X, position.Y, position.Z, 0.0f)); // FIXME position is vec4
+	Uniform::Bind(*shader, "lightSource.ambient", light->mAmbientColor);
+	Uniform::Bind(*shader, "lightSource.diffuse", light->mDiffuseColor);
+	Uniform::Bind(*shader, "lightSource.specular", light->mSpecularColor);
 }
 
 void Renderer::Bind(const Material* material, const Program* shader)
 {
-	if (material->mAmbientMap != NULL) material->mAmbientMap->Bind(0);
-	else mWhiteTexture->Bind(0);
-	if (material->mDiffuseMap != NULL) material->mDiffuseMap->Bind(1);
-	else mWhiteTexture->Bind(1);
-	if (material->mSpecularMap != NULL) material->mSpecularMap->Bind(2);
-	else mWhiteTexture->Bind(2);
-	if (material->mBumpMap != NULL) material->mBumpMap->Bind(3);
-	else mWhiteTexture->Bind(3);
+	if (material->mAmbientMap != NULL)
+		material->mAmbientMap->Bind(0);
+	else
+		mWhiteTexture->Bind(0);
+	if (material->mDiffuseMap != NULL)
+		material->mDiffuseMap->Bind(1);
+	else
+		mWhiteTexture->Bind(1);
+	if (material->mSpecularMap != NULL)
+		material->mSpecularMap->Bind(2);
+	else
+		mWhiteTexture->Bind(2);
+	if (material->mBumpMap != NULL)
+		material->mBumpMap->Bind(3);
+	else
+		mWhiteTexture->Bind(3);
 
+	Uniform::Bind(*shader, "material.ambientTexture", 0); // GL_TEXTURE0
+	Uniform::Bind(*shader, "material.diffuseTexture", 1); // GL_TEXTURE1
+	Uniform::Bind(*shader, "material.specularTexture", 2); // GL_TEXTURE2
+	Uniform::Bind(*shader, "material.normalTexture", 3); // GL_TEXTURE3
 
-	Uniform::Bind(*shader, "MaterialAmbientTexture", 0); // GL_TEXTURE0
-	Uniform::Bind(*shader, "MaterialDiffuseTexture", 1); // GL_TEXTURE1
-	Uniform::Bind(*shader, "MaterialSpecularTexture", 2); // GL_TEXTURE2
-	Uniform::Bind(*shader, "MaterialBumpTexture", 3); // GL_TEXTURE3
-
-	Uniform::Bind(*shader, "MaterialAmbientColor", material->mAmbient);
-	Uniform::Bind(*shader, "MaterialDiffuseColor", material->mDiffuse);
-	Uniform::Bind(*shader, "MaterialSpecularColor", material->mSpecular);
+	Uniform::Bind(*shader, "material.ambient", material->mAmbient);
+	Uniform::Bind(*shader, "material.diffuse", material->mDiffuse);
+	Uniform::Bind(*shader, "material.specular", material->mSpecular);
 //	Uniform::Bind(*shader, "MaterialShininess",  material->mShininess * 128.0f);
-	Uniform::Bind(*shader, "MaterialShininess", material->mShininess);
-	Uniform::Bind(*shader, "MaterialTransparency", material->mTransparency);
+	Uniform::Bind(*shader, "material.shininess", material->mShininess);
+	Uniform::Bind(*shader, "material.transparency", material->mTransparency);
+	Uniform::Bind(*shader, "material.refractionIndex", material->mRefraction);
+
 	checkOpenGLError("Failed to bind material");
 
 //	glActiveTexture(GL_TEXTURE0);

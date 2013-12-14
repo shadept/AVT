@@ -69,7 +69,7 @@ GLint Program::operator ()(const std::string& attribute) const
 		GLint location = glGetAttribLocation(mProgram, attribute.c_str());
 //		assert(location != -1 && "Uniform not in shader");
 		if (location == -1)
-			Logger::Warning << "Attribute " << attribute << " location not found." << Logger::endl;
+			Logger::Debug << "Attribute " << attribute << " location not found." << Logger::endl;
 //		else std::cout << "Attribute " << attribute << " location: " << location << std::endl;
 		mAttributes[attribute] = location;
 		return location;
@@ -86,7 +86,7 @@ GLint Program::operator [](const std::string& uniform) const
 		GLint location = glGetUniformLocation(mProgram, uniform.c_str());
 //		assert(location != -1 && "Uniform not in shader");
 		if (location == -1)
-			Logger::Warning << "Uniform " << uniform << " location not found." << Logger::endl;
+			Logger::Debug << "Uniform " << uniform << " location not found." << Logger::endl;
 //		else std::cout << "Uniform " << uniform << " location: " << location << std::endl;
 		mUniforms[uniform] = location;
 		return location;
@@ -115,8 +115,8 @@ const Program& Program::DetachShader(const Shader& shader) const
 const Program& Program::Link() const
 {
 	glLinkProgram(mProgram);
-	//bool success = checkInfoLog(mProgram, GL_LINK_STATUS, glGetProgramiv, glGetProgramInfoLog);
-	//assert(success == true);
+	bool success = checkInfoLog(mProgram, GL_LINK_STATUS, glGetProgramiv, glGetProgramInfoLog);
+	assert(success == true);
 	return (*this);
 }
 
@@ -210,6 +210,26 @@ void Uniform::Bind(const Program& program, const std::string& name, const Vector
 	{
 		if (Program::msCurrentlyInUse == program.mProgram)
 			glUniform3fv(location, 1, value);
+		else
+		{
+			GLint current;
+			glGetIntegerv(GL_CURRENT_PROGRAM, &current);
+			program.Use();
+			glUniform3fv(location, 1, value);
+			glUseProgram(current);
+			Program::msCurrentlyInUse = current;
+		}
+	}
+	checkOpenGLError("Failed to bind uniform " + name);
+}
+
+void Uniform::Bind(const Program& program, const std::string& name, const Vector4& value)
+{
+	GLint location = program[name];
+	if (location != -1)
+	{
+		if (Program::msCurrentlyInUse == program.mProgram)
+			glUniform4fv(location, 1, value);
 		else
 		{
 			GLint current;

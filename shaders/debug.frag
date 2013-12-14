@@ -5,14 +5,19 @@ in vec3 exNormal;
 in vec3 exTangent;
 in vec2 exTexCoords;
 
-uniform sampler2D MaterialBumpTexture;
+struct Material
+{
+	sampler2D normalTexture;
+};
+
+uniform Material material;
 
 out vec4 FragmentColor;
 
 void main(void)
 {
 	vec3 normal = normalize(exNormal);
-	vec3 bumpMapNormal = texture(MaterialBumpTexture, exTexCoords).rgb;
+	vec3 bumpMapNormal = texture(material.normalTexture, exTexCoords).rgb;
 	if (equal(bumpMapNormal, vec3(1.0)) == false)
 	{
 		vec3 tangent = normalize(exTangent);

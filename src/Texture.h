@@ -39,6 +39,24 @@ private:
 	unsigned mHeight = 0;
 };
 
+class Cubemap
+{
+public:
+	Cubemap();
+	~Cubemap();
+
+	void Load(int width, int height);
+	void Load(const std::string& filename);
+
+	void Bind(int unit) const;
+	void Unbind() const;
+
+	GLuint ID() const { return mTextureId; }
+
+private:
+	GLuint mTextureId = 0;
+};
+
 #include "Manager.h"
 
 DECLARE_RESOURCE_AND_LOADER(Texture);

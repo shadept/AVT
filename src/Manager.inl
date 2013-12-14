@@ -58,13 +58,17 @@ template<typename Resource, typename Loader>
 inline Resource* ResourceManager<Resource, Loader>::operator [](const std::string& name)
 {
 	if (name.empty())
+	{
+		Logger::Error << "Cannot get unamed resource" << Logger::endl;
 		return NULL;
+	}
 
 	for (auto* p : mList)
 		if (p != NULL)
 			if (p->GetName() == name)
 				return p;
 
+	Logger::Error << "No resource with handle " << name << " on ResourceManager" << Logger::endl;
 	return NULL;
 }
 
@@ -73,6 +77,8 @@ inline Resource* ResourceManager<Resource, Loader>::operator [](Handle handle)
 {
 	if (handle < mList.size() && handle >= 0)
 		return mList[handle];
+
+	Logger::Error << "No resource with handle " << handle << " on ResourceManager" << Logger::endl;
 	return NULL;
 }
 
@@ -80,13 +86,17 @@ template<typename Resource, typename Loader>
 inline Resource* ResourceManager<Resource, Loader>::GetElement(const std::string& name)
 {
 	if (name.empty())
+	{
+		Logger::Error << "Cannot get unamed resource" << Logger::endl;
 		return NULL;
+	}
 
 	for (auto* p : mList)
 		if (p != NULL)
 			if (p->GetName() == name)
 				return p;
 
+	Logger::Error << "No resource named " << name << " on ResourceManager" << Logger::endl;
 	return NULL;
 }
 
@@ -95,6 +105,8 @@ inline Resource* ResourceManager<Resource, Loader>::GetElement(Handle handle)
 {
 	if (handle < mList.size() && handle >= 0)
 		return mList[handle];
+
+	Logger::Error << "No resource with handle " << handle << " on ResourceManager" << Logger::endl;
 	return NULL;
 }
 
@@ -117,7 +129,11 @@ inline Handle ResourceManager<Resource, Loader>::Load(const std::string& name, c
 	assert(!name.empty() && "resource must have a non empty name");
 	assert(!name.empty() && "resource must be loaded from non empty filename");
 
-	Resource* resource = GetElement(name);
+	Resource* resource = NULL;
+	for (auto* p : mList)
+			if (p != NULL)
+				if (p->GetName() == name)
+					resource = p;
 	if (resource != NULL)
 	{
 		Logger::Info << name << " already in manager" << Logger::endl;
@@ -170,7 +186,11 @@ inline Handle ResourceManager<Resource, Loader>::Add(const std::string& name, ty
 	assert(!name.empty() && "resource must have a non empty name");
 	assert(raw != NULL && "raw pointer cannot be NULL");
 
-	Resource* resource = GetElement(name);
+	Resource* resource = NULL;
+		for (auto* p : mList)
+				if (p != NULL)
+					if (p->GetName() == name)
+						resource = p;
 	if (resource != NULL)
 	{
 		Logger::Info << name << " already in manager" << Logger::endl;
