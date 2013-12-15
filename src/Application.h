@@ -12,6 +12,7 @@ public:
 
 	void MainLoop();
 
+	virtual void OnCleanup();
 	virtual void OnDraw();
 	virtual void OnMouse(int button, int state, int x, int y);
 	virtual void OnMouseMotion(int x, int y);

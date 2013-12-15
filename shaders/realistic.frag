@@ -37,7 +37,6 @@ struct Light
 	vec3 spotDirection;
 	float spotExponent;
 	float spotCutoff;		// [0 .. 90]
-	float spotCosCutoff;	// [1 .. 0]
 	float constantAttenuation;
 	float linearAttenuation;
 	float quadraticAttenuation;
@@ -145,7 +144,7 @@ void main(void)
 
 	vec3 color = environment.ambient + (ambient + diffuse + specular) * attenuation;
 
-	if (material.transparency < 1.0)
+	if (material.transparency < 1.0 || material.reflectivity > 0.0)
 	{
 		diffuse = DiffuseContribution() * (NdotL * 0.5 + 0.5);
 		color = ambient + (diffuse + specular);
@@ -157,17 +156,18 @@ void main(void)
 		float fresnel = fresnelReflectance(dot(view, normal), r0);
 
 		vec3 vRefracted = refract(-view, normal, rr);
-		vRefracted = vec3(inverse(ViewMatrix) * vec4(vRefracted, 0.0));
+		// vRefracted = vec3(inverse(ViewMatrix) * vec4(vRefracted, 0.0));
 
 		vec3 vReflected = reflect(-view, normal);
-		vReflected = vec3(inverse(ViewMatrix) * vec4(vReflected, 0.0));
+		// vReflected = vec3(inverse(ViewMatrix) * vec4(vReflected, 0.0));
 
-		vec3 cRefracted = texture(environment.map, vRefracted).rgb;
-		vec3 cReflected = texture(environment.map, vReflected).rgb;
+		vec3 cRefracted = textureCube(environment.map, vRefracted).rgb;
+		vec3 cReflected = textureCube(environment.map, vReflected).rgb;
 
-		vec3 fresnelColor = mix(cRefracted * (1.0 - material.transparency), cReflected, fresnel);
+		vec3 reflectionColor = mix(color, cReflected, material.reflectivity);
+		vec3 fresnelColor = mix(cRefracted, reflectionColor, material.transparency);
 
-		FragmentColor = vec4(color * material.transparency + fresnelColor, 1.0);
+		FragmentColor = vec4(fresnelColor, 1.0);
 	}
 	else
 		FragmentColor = vec4(color, 1.0);

@@ -4,6 +4,11 @@
 Application* gCurrentInstance;
 
 extern "C"
+void cleanupCallback() {
+	gCurrentInstance->OnCleanup();
+}
+
+extern "C"
 void displayCallback() {
 	gCurrentInstance->OnDisplay();
 }
@@ -43,13 +48,19 @@ unsigned long timestamp()
 
 Application::Application(const std::string& title, int width, int height)
 {
+	static int argc = 1;
+	static char* argv[] = { "AVT" };
+	glutInit(&argc, argv);
+
+	glutInitContextVersion(3, 3);
+	glutInitContextFlags(GLUT_FORWARD_COMPATIBLE);
+	glutInitContextProfile(GLUT_CORE_PROFILE);
+
 	mMouseX = mMouseY = 0;
 	mNow = mDelta = 0.0f;
 	mLastTime = timestamp();
 	mWindow = new Window(title, width, height);
 	mRenderer = new Renderer;
-
-	mWindow->GetContext()->SetRenderer(mRenderer);
 
 	gCurrentInstance = this;
 //	glutCloseFunc(cleanupCallBack);
@@ -70,6 +81,11 @@ Application::~Application()
 void Application::MainLoop()
 {
 	glutMainLoop();
+}
+
+void Application::OnCleanup()
+{
+	// clean all managers
 }
 
 void Application::OnDraw()
@@ -106,7 +122,6 @@ unsigned long Application::GetDeltaTime() const {
 
 void Application::OnDisplay()
 {
-	mRenderer->_frameCounter++;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	OnDraw();

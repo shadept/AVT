@@ -13,7 +13,11 @@ std::string readFile(const std::string& filename);
 Renderer::Renderer() :
 		mShader(nullptr), mPickingShader(0), mCamera(nullptr), mLight(nullptr)
 {
-	_frameCounter = 0;
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+
+
 	mPicking = false;
 	mLighting = true;
 	mNeedLightUpdate = true;
@@ -48,7 +52,7 @@ Renderer::Renderer() :
 	Logger::Debug << "Loaded cube map" << Logger::endl;
 
 	mCubemap = new Cubemap();
-	mCubemap->Load(1024, 1024);
+	mCubemap->Load(1024,1024);
 }
 
 Renderer::~Renderer()
@@ -125,6 +129,11 @@ void Renderer::BuildEnvironmentMap(Node* scene, const Vector3& center)
 {
 	assert(scene != NULL && "cannot built environment map from null scene");
 
+	Camera camera = *mCamera;
+	mCamera->UpdateTransformation();
+	mCamera->SetPerspective(90.0f, 1.0f, 1.0f, 500.0f);
+	mCamera->SetViewport(1024, 1024);
+
 	GLuint framebuffer = 0, depthbuffer = 0;
 	glGenFramebuffers(1, &framebuffer);
 	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
@@ -133,7 +142,7 @@ void Renderer::BuildEnvironmentMap(Node* scene, const Vector3& center)
 
 	glGenRenderbuffers(1, &depthbuffer);
 	glBindRenderbuffer(GL_RENDERBUFFER, depthbuffer);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 2048, 2048);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 1024, 1024);
 
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthbuffer);
 
@@ -141,10 +150,7 @@ void Renderer::BuildEnvironmentMap(Node* scene, const Vector3& center)
 	assert(status == GL_FRAMEBUFFER_COMPLETE && "failed to create framebuffer");
 
 	static Vector3 lookAt[] = { {1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1} };
-	static Vector3 up[] = { {0, -1, 0}, {0, -1, 0}, {1, 0, 0}, {1, 0, 0}, {0, -1, 0}, {0, -1, 0} };
-	Camera camera = *mCamera;
-	mCamera->SetFustrum(90.0f, 1.0f, 1.0f, 1000.0f);
-	mCamera->SetViewport(1024, 1024);
+	static Vector3 up[] = { {0, -1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}, {0, -1, 0}, {0, -1, 0} };
 
 	bool lighting = mLighting;
 	SetLighting(false);
@@ -153,7 +159,8 @@ void Renderer::BuildEnvironmentMap(Node* scene, const Vector3& center)
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, mCubemap->ID(), 0);
 		status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		assert(status == GL_FRAMEBUFFER_COMPLETE && "failed to create framebuffer");
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClear(GL_DEPTH_BUFFER_BIT);
 
 		mCamera->SetLookAt(center, center + lookAt[i], up[i]);
 		scene->Draw(*this);
@@ -170,6 +177,7 @@ void Renderer::BuildEnvironmentMap(Node* scene, const Vector3& center)
 	glDeleteFramebuffers(1, &framebuffer);
 
 	mCamera->SetViewport(mCamera->GetWidth(), mCamera->GetHeight());
+	glClear(GL_DEPTH_BUFFER_BIT);
 }
 
 ////////////////////////// DRAWING SCENE //////////////////////////////
@@ -223,20 +231,18 @@ void Renderer::DrawScene(Node* scene)
 	assert(mCamera && "Renderer must have a camera attached");
 	if (scene)
 	{
-
-		// mLight = nullptr;
 		//TODO create list of object to draw, and sort them from back to front
 		scene->Draw(*this);
 
 		if (mTransparentList.size() > 0 && !mDebugging)
 		{
-//			glEnable(GL_BLEND);
-//			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 			for (auto* geo : mTransparentList)
 				Draw(geo, true);
 
-//			glDisable(GL_BLEND);
+			glDisable(GL_BLEND);
 		}
 		mTransparentList.clear();
 	}
@@ -331,10 +337,17 @@ void Renderer::Bind(const Light* light, const Program* shader)
 
 	light->UpdateTransformation();
 	const Vector3& position = light->LocalTransform.Position();
-	Uniform::Bind(*shader, "lightSource.position", Vector4(position.X, position.Y, position.Z, 0.0f)); // FIXME position is vec4
+	Uniform::Bind(*shader, "lightSource.position", Vector4(position.X, position.Y, position.Z,
+			(light->mType == Light::Type::DIRECTIONAL ? 0.0f : 1.0f)));
 	Uniform::Bind(*shader, "lightSource.ambient", light->mAmbientColor);
 	Uniform::Bind(*shader, "lightSource.diffuse", light->mDiffuseColor);
 	Uniform::Bind(*shader, "lightSource.specular", light->mSpecularColor);
+	Uniform::Bind(*shader, "lightSource.spotDirection", light->mDirection);
+	Uniform::Bind(*shader, "lightSource.spotExponent", light->mSpotExponent);
+	Uniform::Bind(*shader, "lightSource.spotCutoff", light->mCutoffAngle);
+	Uniform::Bind(*shader, "lightSource.constantAttenuation", 1);
+	Uniform::Bind(*shader, "lightSource.linearAttenuation", light->mLinearAtt);
+	Uniform::Bind(*shader, "lightSource.quadraticAttenuation", light->mQuadraticAtt);
 }
 
 void Renderer::Bind(const Material* material, const Program* shader)
@@ -368,6 +381,7 @@ void Renderer::Bind(const Material* material, const Program* shader)
 	Uniform::Bind(*shader, "material.shininess", material->mShininess);
 	Uniform::Bind(*shader, "material.transparency", material->mTransparency);
 	Uniform::Bind(*shader, "material.refractionIndex", material->mRefraction);
+	Uniform::Bind(*shader, "material.reflectivity", material->mReflectivity);
 
 	checkOpenGLError("Failed to bind material");
 

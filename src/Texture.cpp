@@ -104,6 +104,11 @@ Cubemap::Cubemap()
 
 Cubemap::~Cubemap()
 {
+	if (mTextureId != 0)
+	{
+		glDeleteTextures(1, &mTextureId);
+		mTextureId = 0;
+	}
 }
 
 void Cubemap::Load(int width, int height)
@@ -114,25 +119,21 @@ void Cubemap::Load(int width, int height)
 	glBindTexture(GL_TEXTURE_CUBE_MAP, mTextureId);
 	checkOpenGLError("Failed to bind texture");
 
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + 0, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + 1, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + 2, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + 3, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + 4, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + 5, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+	glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+//	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	for (int i = 0; i < 6; i++)
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
 
 	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+	checkOpenGLError("Failed to create blank cubemap");
 }
 
 void Cubemap::Load(const std::string& filename)
 {
-    // GL_TEXTURE_CUBE_MAP_POSITIVE_X​
-    // GL_TEXTURE_CUBE_MAP_NEGATIVE_X​
-    // GL_TEXTURE_CUBE_MAP_POSITIVE_Y​
-    // GL_TEXTURE_CUBE_MAP_NEGATIVE_Y​
-    // GL_TEXTURE_CUBE_MAP_POSITIVE_Z​
-    // GL_TEXTURE_CUBE_MAP_NEGATIVE_Z​
-
 	glGenTextures(1, &mTextureId);
 	assert(mTextureId != 0 && "Failed to create opengl texture");
 
@@ -159,8 +160,7 @@ void Cubemap::Load(const std::string& filename)
 			return;
 		}
 	}
-	// glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mWidth, mHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, &image[0]);
-	// checkOpenGLError("Failed to load texture");
+	checkOpenGLError("Failed to load texture");
 
 	glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -175,7 +175,6 @@ void Cubemap::Load(const std::string& filename)
 void Cubemap::Bind(int unit) const
 {
 	glActiveTexture(GL_TEXTURE0 + unit);
-//	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, mTextureId);
 	checkOpenGLError("Failed to unbind texture cubemap");
 }

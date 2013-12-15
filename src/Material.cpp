@@ -25,6 +25,7 @@ void MaterialParser::MaterialDefinition::Reset()
 	SpecularCoeff = 0.0f;
 	Transparency = 1.0f;
 	RefractionIndex = 1.0f;
+	Reflectivity = 0.0f;
 	IlluminationModel = 2;
 }
 
@@ -39,7 +40,7 @@ void MaterialParser::Load(std::vector<MaterialDefinition>& materials, std::istre
 		std::stringstream ss(line);
 		std::string tag;
 		ss >> tag;
-		if (tag[0] == '#')
+		if (tag[0] == '#' || tag.empty())
 		{
 			continue;
 		}
@@ -69,7 +70,7 @@ void MaterialParser::Load(std::vector<MaterialDefinition>& materials, std::istre
 		{
 			ss >> material.SpecularCoeff;
 		}
-		else if (tag == "d" /*|| tag == "Tr"*/)
+		else if (tag == "d" || tag == "Tr")
 		{
 			ss >> material.Transparency;
 		}
@@ -93,9 +94,13 @@ void MaterialParser::Load(std::vector<MaterialDefinition>& materials, std::istre
 		{
 			ss >> material.SpecularMap;
 		}
-		else if (tag == "map_Bump" || "bump")
+		else if (tag == "map_Bump" || tag == "bump")
 		{
 			ss >> material.BumpMap;
+		}
+		else if (tag == "Nr")
+		{
+			ss >> material.Reflectivity;
 		}
 		else
 		{
@@ -133,6 +138,7 @@ bool MaterialLoader::Load(MaterialResource** resource, Handle handle, const std:
 			m->mShininess = def.SpecularCoeff;
 			m->mTransparency = def.Transparency;
 			m->mRefraction = def.RefractionIndex;
+			m->mReflectivity = def.Reflectivity;
 
 			if (!def.AmbientMap.empty())
 			{

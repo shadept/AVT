@@ -26,10 +26,12 @@ public:
 	Vector3 mAmbientColor;
 	Vector3 mDiffuseColor;
 	Vector3 mSpecularColor; // uma beka dumb, normalmente tem a cor da luz +- cor do material
+	Vector3 mDirection;
 	// float mConstanceAtt;
 	float mLinearAtt;
 	float mQuadraticAtt;
 	float mCutoffAngle;
+	float mSpotExponent;
 };
 
 #endif // LIGHT_H

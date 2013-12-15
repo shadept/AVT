@@ -6,10 +6,8 @@ Window::Window(const std::string& title, int width, int height)
 {
 	mWidth = width;
 	mHeight = height;
-	mContext = new Context();
-	mRenderer = nullptr;
 
-	//mContext->Init();
+	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS);
 	glutInitWindowSize(width, height);
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
 	mHandle = glutCreateWindow(title.c_str());
@@ -19,7 +17,6 @@ Window::Window(const std::string& title, int width, int height)
 		exit(EXIT_FAILURE);
 	}
 
-	// FIXME this shouldn't be here but GLUT forces this
 	glewExperimental = GL_TRUE;
 	GLenum result = glewInit();
 	if (result != GLEW_OK)
@@ -30,8 +27,6 @@ Window::Window(const std::string& title, int width, int height)
 	GLenum err_code = glGetError();
 	std::cerr << "CONTEXT: OpenGL v" << glGetString(GL_VERSION) << " " << err_code << std::endl;
 
-	mContext->SetDefaultState();
-//	glClearColor(0.9f, 0.9f, 0.9f, 1.0f);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 }
 
@@ -39,7 +34,6 @@ Window::~Window()
 {
 	//glutDestroyWindow(mHandle);
 	mHandle = 0;
-	delete mContext;
 }
 
 void Window::Touch() const
@@ -50,22 +44,14 @@ void Window::Touch() const
 
 void Window::Resize(int width, int height)
 {
-	//mContext->Bind();
 	mWidth = width;
 	mHeight = height;
-//	glViewport(0, 0, width, height);
-	// TODO change window size, not viewport size
 }
 
 void Window::SetTitle(const std::string& title)
 {
 	glutSetWindow(mHandle);
 	glutSetWindowTitle(title.c_str());
-}
-
-void Window::SetRenderer(Renderer* renderer)
-{
-	mRenderer = renderer;
 }
 
 int Window::GetWidth() const
@@ -76,9 +62,4 @@ int Window::GetWidth() const
 int Window::GetHeight() const
 {
 	return mHeight;
-}
-
-Context* Window::GetContext() const
-{
-	return mContext;
 }

@@ -49,9 +49,6 @@ public:
 	void Draw(Geometry* geometry, bool overrideTransparency = false);
 	void Draw(const Light* light);
 
-public:
-	mutable int _frameCounter;
-
 private:
 	void Bind(const Light* light, const Program* shader);
 	void Bind(const Material* material, const Program* shader);

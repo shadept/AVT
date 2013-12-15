@@ -6,6 +6,7 @@ Light::Light(Type type) :
 	mLinearAtt = 0.0f;
 	mQuadraticAtt = 0.0f;
 	mCutoffAngle = 30.0f;
+	mSpotExponent = 1.0f;
 }
 
 Light::~Light()

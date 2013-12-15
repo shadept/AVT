@@ -7,10 +7,12 @@
 #include "Node.h"
 #include "Light.h"
 
+typedef std::vector<std::string> ArgumentList;
+
 class App: public Application
 {
 public:
-	App();
+	App(ArgumentList args);
 	~App();
 
 	void OnDraw();
@@ -30,7 +32,6 @@ private:
 	Vector3 mCameraUp;
 	Real mOffsetX, mOffsetY;
 	Real mDragOriginX, mDragOriginY;
-	Real mCameraH, mCameraV;
 	Real mDistance;
 
 	bool mDragging, mFriction;

@@ -30,6 +30,7 @@ struct MaterialParser
 		float SpecularCoeff; // Ns
 		float Transparency; // d or Tr
 		float RefractionIndex; // Ni
+		float Reflectivity; // Nr - not standard
 		int IlluminationModel; // illum (0-no lighting applied, 1-normal lighting, 2-specular)
 	};
 
@@ -49,6 +50,7 @@ struct Material
 	float mShininess = 0.0f;
 	float mTransparency = 1.0f;
 	float mRefraction = 1.0;
+	float mReflectivity = 0.0f;
 };
 
 #include "Manager.h"

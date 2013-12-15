@@ -22,8 +22,9 @@ public:
 	Matrix4 GetViewProjection() const;
 
 	const Matrix4& GetFrustrum() const;
+	void SetOtho(Real left, Real right, Real bottom, Real top, Real near, Real far);
 	void SetFustrum(Real left, Real right, Real bottom, Real top, Real near, Real far);
-	void SetFustrum(Real fovy, Real aspectRatio, Real near, Real far);
+	void SetPerspective(Real fovy, Real aspectRatio, Real near, Real far);
 
 	void SetLookAt(const Vector3& eye, const Vector3& center, const Vector3& up = Vector3::AxisY);
 

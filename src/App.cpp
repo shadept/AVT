@@ -4,15 +4,14 @@
 #include <fstream>
 #include <sstream>
 
-App::App() :
+App::App(ArgumentList args) :
 		Application("Title", 1024, 768), mWorld("world")
 {
 	mFPS = mTotalFrames = 0;
 	mTotalTime = 0.0f;
 	mCameraUp = Vector3::AxisY;
-	mCameraH = mCameraV = 0;
 	mOffsetX = mOffsetY = 0;
-	mOffsetX = 1;
+//	mOffsetX = 1.5f;
 	mDragOriginX = mDragOriginY = 0.0f;
 	mDistance = 5.0f;
 	mDragging = mFriction = false;
@@ -28,7 +27,7 @@ App::App() :
 	mRenderer->Draw(&mLight);
 
 	mCamera.SetLookAt(Vector3(0.0f, 0.0f, mDistance), Vector3::Zero);
-	mCamera.SetFustrum(35.0f, (float) mWindow->GetWidth() / mWindow->GetHeight(), 1.0f, 50.0f);
+	mCamera.SetPerspective(35.0f, (float) mWindow->GetWidth() / mWindow->GetHeight(), 1.0f, 50.0f);
 
 	mRenderer->SetCamera(&mCamera);
 
@@ -36,8 +35,6 @@ App::App() :
 
 	mCenter = new Node("center");
 	mCenter->AttachChild(mModel);
-
-	Handle h = -1;
 
 	MeshManager.Load("sphere", "./models/sphere.obj");
 	MeshManager.Load("cube", "./models/cube.obj");
@@ -51,10 +48,9 @@ App::App() :
 	MeshManager.Load("kaleidoscope", "./models/kaleidoscope.obj");
 //	MeshManager.Load("kaleidoscope", "./models/sphere.obj"); // esta esfera nao funca lol, normals ao contrario
 
-	mModel->SetMesh(MeshManager["bunny"]->GetRaw());
-//	mModel->LocalTransform.SetPosition(Vector3(0.0f, -1.0f, 0.0f));
+	mModel->SetMesh(MeshManager["sphere"]->GetRaw());
 
-	h = TextureManager.Load("bunny", "./textures/bunny.png");
+	TextureManager.Load("bunny", "./textures/bunny.png");
 
 	TextureManager.Load("kaleidoscope0", "./textures/kaleidoscope0.png");
 	TextureManager.Load("kaleidoscope1", "./textures/kaleidoscope1.png");
@@ -64,8 +60,8 @@ App::App() :
 	bunnyMaterial->mDiffuse = Vector3(1.0f, 1.0f, 1.0f);
 	bunnyMaterial->mSpecular = Vector3(1.0f, 0.5f, 0.0f);
 	bunnyMaterial->mShininess = 0.1f;
-	bunnyMaterial->mDiffuseMap = TextureManager[h]->GetRaw();
-	h = MaterialManager.Add("bunny", bunnyMaterial);
+	bunnyMaterial->mDiffuseMap = TextureManager["bunny"]->GetRaw();
+	MaterialManager.Add("bunny", bunnyMaterial);
 
 	Material* kaleidoscopeMaterial = new Material();
 	kaleidoscopeMaterial->mAmbient = Vector3(0.1f, 0.1f, 0.1f);
@@ -78,7 +74,7 @@ App::App() :
 	MaterialManager.Load("diablo_material", "./materials/diablo.mtl");
 	MaterialManager.Load("headcrab_material", "./materials/headcrab.mtl");
 
-	mModel->SetMaterial(MaterialManager[h]->GetRaw());
+	mModel->SetMaterial(MaterialManager["chrome"]->GetRaw());
 
 	mWorld.AttachChild(mCenter);
 
@@ -183,6 +179,7 @@ void App::OnKeyboard(unsigned char key, int x, int y)
 		case 2:
 		case 3:
 		case 4:
+			MaterialManager["glass"]->GetRaw()->mDiffuseMap = nullptr;
 			mModel->SetMesh(MeshManager[models[k]]->GetRaw());
 			break;
 		case 5:
@@ -237,17 +234,16 @@ void App::OnKeyboard(unsigned char key, int x, int y)
 		mMovingSphere = !mMovingSphere;
 
 	static Vector3 lookAt[] = { {1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1} };
-	static Vector3 up[] = { {0, 1, 0}, {0, 1, 0}, {1, 0, 0}, {1, 0, 0}, {0, 1, 0}, {0, 1, 0} };
-//	static Vector3 up[] = { {0, -1, 0}, {0, -1, 0}, {1, 0, 0}, {1, 0, 0}, {0, -1, 0}, {0, -1, 0} };
+	static Vector3 up[] = { {0, 1, 0}, {0, 1, 0}, {0, 0, -1}, {0, 0, 1}, {0, 1, 0}, {0, 1, 0} };
 	switch(key)
 	{
-	case '0': mCamera.SetFustrum(35.0f, 1.0f, 1.0f, 50.0f); break;
-	case '1': mCamera.SetFustrum(90.0f, 1.0f, 1.0f, 50.0f); mCamera.SetLookAt(Vector3::Zero, lookAt[0], up[0]); break;
-	case '2': mCamera.SetFustrum(90.0f, 1.0f, 1.0f, 50.0f); mCamera.SetLookAt(Vector3::Zero, lookAt[1], up[1]); break;
-	case '3': mCamera.SetFustrum(90.0f, 1.0f, 1.0f, 50.0f); mCamera.SetLookAt(Vector3::Zero, lookAt[2], up[2]); break;
-	case '4': mCamera.SetFustrum(90.0f, 1.0f, 1.0f, 50.0f); mCamera.SetLookAt(Vector3::Zero, lookAt[3], up[3]); break;
-	case '5': mCamera.SetFustrum(90.0f, 1.0f, 1.0f, 50.0f); mCamera.SetLookAt(Vector3::Zero, lookAt[4], up[4]); break;
-	case '6': mCamera.SetFustrum(90.0f, 1.0f, 1.0f, 50.0f); mCamera.SetLookAt(Vector3::Zero, lookAt[5], up[5]); break;
+	case '0': mCamera.SetPerspective(35.0f, 1.0f, 1.0f, 50.0f); mDistance = 5.0f; mCamera.SetLookAt({0.0f, 0.0f, mDistance}, Vector3::Zero); break;
+	case '1': mDistance = 0.0f; mCamera.SetPerspective(90.0f, 1.0f, 1.0f, 50.0f); mCamera.SetLookAt(Vector3::Zero, lookAt[0], up[0]); break;
+	case '2': mDistance = 0.0f; mCamera.SetPerspective(90.0f, 1.0f, 1.0f, 50.0f); mCamera.SetLookAt(Vector3::Zero, lookAt[1], up[1]); break;
+	case '3': mDistance = 0.0f; mCamera.SetPerspective(90.0f, 1.0f, 1.0f, 50.0f); mCamera.SetLookAt(Vector3::Zero, lookAt[2], up[2]); break;
+	case '4': mDistance = 0.0f; mCamera.SetPerspective(90.0f, 1.0f, 1.0f, 50.0f); mCamera.SetLookAt(Vector3::Zero, lookAt[3], up[3]); break;
+	case '5': mDistance = 0.0f; mCamera.SetPerspective(90.0f, 1.0f, 1.0f, 50.0f); mCamera.SetLookAt(Vector3::Zero, lookAt[4], up[4]); break;
+	case '6': mDistance = 0.0f; mCamera.SetPerspective(90.0f, 1.0f, 1.0f, 50.0f); mCamera.SetLookAt(Vector3::Zero, lookAt[5], up[5]); break;
 	}
 }
 
@@ -255,7 +251,7 @@ void App::OnResize(int w, int h)
 {
 	float ratio = (float) w / h;
 	mCamera.SetViewport(w, h);
-	mCamera.SetFustrum(35.0f, ratio, 1.0f, 50.0f);
+	mCamera.SetPerspective(35.0f, ratio, 1.0f, 50.0f);
 }
 
 void App::OnUpdate(const Real delta)
@@ -297,7 +293,7 @@ void App::OnUpdate(const Real delta)
 		mCenter->LocalTransform.Rotate(Quaternion::fromAxisAngle(mCenter->LocalTransform.Side(), offY * delta));
 	}
 
-//	mCamera.LocalTransform.SetPosition(Vector3(0.0f, 0.0f, -mDistance));
+	mCamera.LocalTransform.SetPosition(Vector3(0.0f, 0.0f, -mDistance));
 //	mCamera.LocalTransform.Rotate(Quaternion::fromAxisAngle(mCamera.LocalTransform.Up(), offX * delta));
 //	mCamera.LocalTransform.Rotate(Quaternion::fromAxisAngle(mCamera.LocalTransform.Side(), offY * delta));
 

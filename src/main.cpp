@@ -21,7 +21,12 @@ std::string readFile(const std::string& filename)
 
 int main(int argc, char* argv[])
 {
-	App app;
+	ArgumentList args;
+
+	for(int i = 0; i < argc; ++i)
+		args.emplace_back(argv[i]);
+
+	App app{args};
 	app.MainLoop();
 
 	exit(EXIT_SUCCESS);
