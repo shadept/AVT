@@ -164,19 +164,20 @@ void main(void)
 		vRefracted = vec3(inverseViewMatrix * vec4(vRefracted, 0.0));
 		vReflected = vec3(inverseViewMatrix * vec4(vReflected, 0.0));
 
-		vec3 cRefracted = textureCube(environment.map, vRefracted).rgb;
-		vec3 cReflected = textureCube(environment.map, vReflected).rgb;
+		vec3 cRefracted = texture(environment.map, vRefracted).rgb;
+		vec3 cReflected = texture(environment.map, vReflected).rgb;
 
 		color = mix(color, cReflected, fresnel);
 		color = mix(cRefracted, color, material.transparency);
 	}
 	else if (material.reflectivity > 0.0)
 	{
-		float val = min(NdotL + environment.ambient + ambient, 1.0);
+		float l = length(environment.ambient + ambient);
+		float val = min(NdotL * l + (1.0 - l), 1.0);
 		vec3 vReflected = reflect(-view, normal);
 		// Same as above
 		vReflected = vec3(inverseViewMatrix * vec4(vReflected, 0.0));
-		vec3 cReflected = textureCube(environment.map, vReflected).rgb * val;
+		vec3 cReflected = texture(environment.map, vReflected).rgb * val;
 		color = mix(color, cReflected, material.reflectivity);
 	}
 
