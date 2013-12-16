@@ -10,12 +10,14 @@
 // Forward delcaration
 class Spatial;
 class Light;
-class Material;
+struct Material;
 class Node;
 class Geometry;
 class Camera;
 class Texture;
 class Cubemap;
+class RenderTarget;
+class RenderTargetCube;
 
 class Renderer
 {
@@ -61,7 +63,7 @@ private:
 	Program* mRealisticShader;
 	Program* mSpecularShader;
 	Texture* mWhiteTexture;
-	Cubemap* mCubemap;
+	RenderTargetCube* mRenderCube;
 	Cubemap* mSkybox;
 
 	// Other variables
@@ -69,7 +71,6 @@ private:
 	Camera* mCamera;
 	const Light* mLight;
 	bool mPicking, mLighting;
-	bool mNeedLightUpdate;
 	bool mDebugging;
 
 	std::vector<Geometry*> mTransparentList;

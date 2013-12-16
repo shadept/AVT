@@ -25,9 +25,7 @@ struct MeshParser
 
 	struct Face
 	{
-		unsigned int v[3];
-		unsigned int vt[3];
-		unsigned int vn[3];
+		unsigned int v[3], vt[3], vn[3];
 	};
 
 	static void Load(Mesh* mesh, std::istream& input);
@@ -43,15 +41,12 @@ public:
 
 	struct Vertex
 	{
+		Vertex(Vertice v, TexCoords tc);
 		Vertex(Vertice v, Normal n);
 		Vertex(Vertice v, Normal n, TexCoords tc);
 
-//		float X, Y, Z;
-//		float NX, NY, NZ;
-//		float TX, TY, TZ;
-//		float U, V;
 		Vector3 position;
-		Vector3 normal;
+		Vector3 normal = {0.0f, 0.0f, 0.0f};
 		Vector3 tangent = {0.0f, 0.0f, 0.0f};
 		float U = 0.0f;
 		float V = 0.0f;

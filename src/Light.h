@@ -1,6 +1,7 @@
 #ifndef LIGHT_H
-#define LIGHT_T
+#define LIGHT_H
 
+#include "Material.h"
 #include "Spatial.h"
 #include "Vector3.h"
 
@@ -32,6 +33,10 @@ public:
 	float mQuadraticAtt;
 	float mCutoffAngle;
 	float mSpotExponent;
+
+private:
+	Geometry* mDebugSphere;
+	Material* mDebugMaterial;
 };
 
 #endif // LIGHT_H

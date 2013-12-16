@@ -7,16 +7,6 @@
 
 class Texture;
 
-struct TextureParser
-{
-	struct TextureDefinition
-	{
-
-	};
-
-	static void Load(Texture* mesh, std::istream& input);
-};
-
 class Texture
 {
 public:
@@ -45,7 +35,7 @@ public:
 	Cubemap();
 	~Cubemap();
 
-	void Load(int width, int height);
+	void Create(int width, int height);
 	void Load(const std::string& filename);
 
 	void Bind(int unit) const;
@@ -55,6 +45,46 @@ public:
 
 private:
 	GLuint mTextureId = 0;
+};
+
+class RenderTarget
+{
+public:
+	RenderTarget();
+	~RenderTarget();
+
+	void Create(int width, int height);
+
+	void BindToWrite();
+	void BindToRead(int unit);
+	void Unbind();
+
+private:
+	GLuint mTextureId = 0;
+	GLuint mFramebuffer = 0;
+	GLuint mDepthBuffer = 0;
+	unsigned mWidth = 0;
+	unsigned mHeight = 0;
+};
+
+class RenderTargetCube
+{
+public:
+	RenderTargetCube();
+	~RenderTargetCube();
+
+	void Create(int width, int height);
+
+	void BindToWrite(int face);
+	void BindToRead(int unit);
+	void Unbind();
+
+private:
+	GLuint mTextureId = 0;
+	GLuint mFramebuffer = 0;
+	GLuint mDepthBuffer = 0;
+	unsigned mWidth = 0;
+	unsigned mHeight = 0;
 };
 
 #include "Manager.h"

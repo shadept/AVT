@@ -9,6 +9,7 @@ IdGenerator Spatial::msIdGenerator;
 Spatial::Spatial(const std::string& name) :
 		mId(msIdGenerator.Generate()), mName(name), mParent(nullptr)
 {
+	mEnabled = true;
 }
 
 Spatial::~Spatial()
@@ -18,11 +19,23 @@ Spatial::~Spatial()
 void Spatial::Draw(Renderer& renderer) const
 {
 	// do culling here
-	OnDraw(renderer);
+	if (mEnabled)
+		OnDraw(renderer);
 }
 
 void Spatial::OnUpdate(Real delta)
 {
+}
+
+
+void Spatial::Enabled(bool b)
+{
+	mEnabled = b;
+}
+
+bool Spatial::IsEnabled() const
+{
+	return mEnabled;
 }
 
 Identifier Spatial::GetId() const

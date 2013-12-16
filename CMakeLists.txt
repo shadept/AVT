@@ -17,7 +17,7 @@ if(NOT GLEW_FOUND)
 endif()
 
 set(CMAKE_CXX_FLAGS_DEBUG "-Wall -fmessage-length=0 -O0 -g3 -std=c++11")
-set(CMAKE_CXX_FLAGS_RELEASE "-Wall -fmessage-length=0 -O3 -std=c++11")
+set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -Wall -fmessage-length=0 -O3 -std=c++11")
 
 if(CMAKE_BUILD_TYPE STREQUAL "")
 	set(CMAKE_BUILD_TYPE Debug)

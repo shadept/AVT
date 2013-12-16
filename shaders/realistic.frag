@@ -107,19 +107,23 @@ float fresnelReflectance(float VdotN, float r0)
 
 void main(void)
 {
+	mat4 inverseViewMatrix = inverse(ViewMatrix);
 	vec3 vertex = exVertex;
 	vec3 normal = getNormal(exNormal, exTangent, exTexCoords);
 	vec3 view = normalize(-vertex);
 
-	// vec4 lightPosition = lightSource.position;
-	vec4 lightPosition = ViewMatrix * lightSource.position;
-	// lightPosition.w = lightSource.position.w;
+	// vec3 viewWC = vec3(inverseViewMatrix * vec4(view, 1.0));
+	// vec3 normalWC = normalize(vec3(vec4(normal, 0.0) * ViewMatrix));
+
+	bool direction = lightSource.position.w == 0.0;
+	vec4 lightPosition = lightSource.position;
+	// vec4 lightPosition = ViewMatrix * lightSource.position;
 	vec3 light = vec3(0.0);
 	float lightDistance = 0;
-	// if (lightPosition.w == 0.0) // if directional
+	if (direction)
 		light = lightPosition.xyz;
-	// else
-	// 	light = lightPosition.xyz - vertex;
+	else
+		light = lightPosition.xyz - vertex;
 	lightDistance = length(light);
 	light = normalize(light);
 
@@ -135,40 +139,46 @@ void main(void)
 
 	// float spotEffect = dot(normalize(lightSource.spotDirection), normalize(-light));
 	float attenuation = 1.0;
-	// if (lightSource.position.w != 0.0) // if not direction
-	// {
-	// 	attenuation = 1.0 / (lightSource.constantAttenuation +
-	// 		lightSource.linearAttenuation * lightDistance +
-	// 		lightSource.quadraticAttenuation * lightDistance * lightDistance);
-	// }
+	if (!direction)
+	{
+		attenuation = 1.0 / (lightSource.constantAttenuation +
+			lightSource.linearAttenuation * lightDistance +
+			lightSource.quadraticAttenuation * lightDistance * lightDistance);
+	}
+
 
 	vec3 color = environment.ambient + (ambient + diffuse + specular) * attenuation;
 
-	if (material.transparency < 1.0 || material.reflectivity > 0.0)
+	if (material.transparency < 1.0)
 	{
-		diffuse = DiffuseContribution() * (NdotL * 0.5 + 0.5);
-		color = ambient + (diffuse + specular);
-
-		//		   | Air  | glass
+		//		   | Air  | material
 		//         \/	  \/
 		float rr = 1.0 / material.refractionIndex;
 		float r0 = pow(1.0 - rr, 2.0) / pow(1.0 + rr, 2.0);
 		float fresnel = fresnelReflectance(dot(view, normal), r0);
 
+		diffuse = DiffuseContribution() * (NdotL * 0.5 + 0.5);
 		vec3 vRefracted = refract(-view, normal, rr);
-		// vRefracted = vec3(inverse(ViewMatrix) * vec4(vRefracted, 0.0));
-
 		vec3 vReflected = reflect(-view, normal);
-		// vReflected = vec3(inverse(ViewMatrix) * vec4(vReflected, 0.0));
+		// Both view and normal were in eye coords, so we need to transform them to world coords
+		vRefracted = vec3(inverseViewMatrix * vec4(vRefracted, 0.0));
+		vReflected = vec3(inverseViewMatrix * vec4(vReflected, 0.0));
 
 		vec3 cRefracted = textureCube(environment.map, vRefracted).rgb;
 		vec3 cReflected = textureCube(environment.map, vReflected).rgb;
 
-		vec3 reflectionColor = mix(color, cReflected, material.reflectivity);
-		vec3 fresnelColor = mix(cRefracted, reflectionColor, material.transparency);
-
-		FragmentColor = vec4(fresnelColor, 1.0);
+		color = mix(color, cReflected, fresnel);
+		color = mix(cRefracted, color, material.transparency);
 	}
-	else
-		FragmentColor = vec4(color, 1.0);
+	else if (material.reflectivity > 0.0)
+	{
+		float val = min(NdotL + environment.ambient + ambient, 1.0);
+		vec3 vReflected = reflect(-view, normal);
+		// Same as above
+		vReflected = vec3(inverseViewMatrix * vec4(vReflected, 0.0));
+		vec3 cReflected = textureCube(environment.map, vReflected).rgb * val;
+		color = mix(color, cReflected, material.reflectivity);
+	}
+
+	FragmentColor = vec4(color, 1.0);
 }

@@ -93,32 +93,23 @@ void MeshParser::Load(Mesh* mesh, std::istream& input)
 	mesh->Load(vertexData);
 }
 
+Mesh::Vertex::Vertex(Vertice v, TexCoords tc)
+{
+	position.set(v.x, v.y, v.z);
+	U = tc.u;
+	V = tc.v;
+}
+
 Mesh::Vertex::Vertex(Vertice v, Normal n)
 {
-//	X = v.x;
-//	Y = v.y;
-//	Z = v.z;
-//	NX = n.x;
-//	NY = n.y;
-//	NZ = n.z;
-	position =
-	{	v.x, v.y, v.z};
-	normal =
-	{	n.x, n.y, n.z};
+	position.set(v.x, v.y, v.z);
+	normal.set(n.x, n.y, n.z);
 }
 
 Mesh::Vertex::Vertex(Vertice v, Normal n, TexCoords tc)
 {
-//	X = v.x;
-//	Y = v.y;
-//	Z = v.z;
-//	NX = n.x;
-//	NY = n.y;
-//	NZ = n.z;
-	position =
-	{	v.x, v.y, v.z};
-	normal =
-	{	n.x, n.y, n.z};
+	position.set(v.x, v.y, v.z);
+	normal.set(n.x, n.y, n.z);
 	U = tc.u;
 	V = tc.v;
 }

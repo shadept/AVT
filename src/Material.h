@@ -7,7 +7,7 @@
 #include "Texture.h"
 #include "Vector3.h"
 
-class Material;
+struct Material;
 
 struct MaterialParser
 {

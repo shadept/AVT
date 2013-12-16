@@ -35,6 +35,9 @@ public:
 
 	virtual void OnUpdate(Real delta);
 
+	void Enabled(bool b);
+	bool IsEnabled() const;
+
 	Identifier GetId() const;
 	const std::string& GetName() const {return mName;}
 	Node* GetParent() const;
@@ -49,6 +52,7 @@ protected:
 	// Abstract
 	Spatial(const std::string& name);
 
+	bool mEnabled;
 	Identifier mId;
 	std::string mName;
 	Node* mParent;

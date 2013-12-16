@@ -21,8 +21,11 @@ Texture::~Texture()
 
 void Texture::Load(const std::vector<unsigned char>& image, int width, int height)
 {
-	glGenTextures(1, &mTextureId);
-	assert(mTextureId != 0 && "Failed to create opengl texture");
+	if (mTextureId == 0)
+	{
+		glGenTextures(1, &mTextureId);
+		assert(mTextureId != 0 && "Failed to create opengl texture");
+	}
 
 	glBindTexture(GL_TEXTURE_2D, mTextureId);
 	checkOpenGLError("Failed to bind texture");
@@ -98,6 +101,8 @@ void Texture::Unbind() const
 	checkOpenGLError("Failed to unbind texture");
 }
 
+///////////////////////////////////////////////////////////////////////////////
+
 Cubemap::Cubemap()
 {
 }
@@ -111,10 +116,13 @@ Cubemap::~Cubemap()
 	}
 }
 
-void Cubemap::Load(int width, int height)
+void Cubemap::Create(int width, int height)
 {
-	glGenTextures(1, &mTextureId);
-	assert(mTextureId != 0 && "Failed to create opengl texture");
+	if (mTextureId == 0)
+	{
+		glGenTextures(1, &mTextureId);
+		assert(mTextureId != 0 && "Failed to create opengl texture");
+	}
 
 	glBindTexture(GL_TEXTURE_CUBE_MAP, mTextureId);
 	checkOpenGLError("Failed to bind texture");
@@ -123,10 +131,10 @@ void Cubemap::Load(int width, int height)
 	glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-//	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
 	for (int i = 0; i < 6; i++)
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
 
 	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 	checkOpenGLError("Failed to create blank cubemap");
@@ -134,8 +142,11 @@ void Cubemap::Load(int width, int height)
 
 void Cubemap::Load(const std::string& filename)
 {
-	glGenTextures(1, &mTextureId);
-	assert(mTextureId != 0 && "Failed to create opengl texture");
+	if (mTextureId == 0)
+	{
+		glGenTextures(1, &mTextureId);
+		assert(mTextureId != 0 && "Failed to create opengl texture");
+	}
 
 	glBindTexture(GL_TEXTURE_CUBE_MAP, mTextureId);
 	checkOpenGLError("Failed to bind texture");
@@ -193,4 +204,173 @@ bool TextureLoader::Load(TextureResource** resource, Handle handle, const std::s
 	(*resource)->mRaw->Load(filename);
 
 	return true;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+RenderTarget::RenderTarget()
+{
+}
+
+RenderTarget::~RenderTarget()
+{
+	if (mFramebuffer != 0)
+	{
+		glDeleteTextures(1, &mTextureId);
+		mTextureId = 0;
+
+		glDeleteFramebuffers(1, &mFramebuffer);
+		mFramebuffer = 0;
+
+		glDeleteRenderbuffers(1, &mDepthBuffer);
+		mDepthBuffer = 0;
+	}
+}
+
+void RenderTarget::Create(int width, int height)
+{
+	if (mFramebuffer == 0)
+	{
+		glGenFramebuffers(1, &mFramebuffer);
+		assert(mFramebuffer != 0 && "Failed to create framebuffer");
+
+		glGenRenderbuffers(1, &mDepthBuffer);
+		assert(mDepthBuffer != 0 && "Failed to create depth buffer");
+
+		glGenTextures(1, &mTextureId);
+		assert(mTextureId != 0 && "Failed to create texture");
+
+	}
+
+	mWidth = width;
+	mHeight = height;
+
+	glBindTexture(GL_TEXTURE_2D, mTextureId);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mWidth, mHeight, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, mFramebuffer);
+
+	glBindRenderbuffer(GL_RENDERBUFFER, mDepthBuffer);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, mWidth, mHeight);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, mDepthBuffer);
+
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, mTextureId, 0);
+	assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE && "Failed to complete framebuffer");
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void RenderTarget::BindToWrite()
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, mFramebuffer);
+	glViewport(0, 0, mWidth, mHeight);
+}
+
+void RenderTarget::BindToRead(int unit)
+{
+//	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glActiveTexture(GL_TEXTURE0 + unit);
+	glBindTexture(GL_TEXTURE_2D, mTextureId);
+	checkOpenGLError("Failed to bind texture");
+}
+
+void RenderTarget::Unbind()
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+RenderTargetCube::RenderTargetCube()
+{
+}
+
+RenderTargetCube::~RenderTargetCube()
+{
+	if (mFramebuffer != 0)
+	{
+		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+		glBindRenderbuffer(GL_RENDERBUFFER, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		glDeleteTextures(1, &mTextureId);
+		mTextureId = 0;
+
+		glDeleteRenderbuffers(1, &mDepthBuffer);
+		mDepthBuffer = 0;
+
+		glDeleteFramebuffers(1, &mFramebuffer);
+		mFramebuffer = 0;
+	}
+}
+
+void RenderTargetCube::Create(int width, int height)
+{
+	if (mFramebuffer == 0)
+	{
+		glGenFramebuffers(1, &mFramebuffer);
+		assert(mFramebuffer != 0 && "Failed to create framebuffer");
+
+		glGenRenderbuffers(1, &mDepthBuffer);
+		assert(mDepthBuffer != 0 && "Failed to create depth buffer");
+
+		glGenTextures(1, &mTextureId);
+		assert(mTextureId != 0 && "Failed to create texture");
+
+	}
+
+	mWidth = width;
+	mHeight = height;
+
+	glBindTexture(GL_TEXTURE_CUBE_MAP, mTextureId);
+	checkOpenGLError("Failed to bind texture");
+
+	glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	for (int i = 0; i < 6; i++)
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, mWidth, mHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+
+	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+	checkOpenGLError("Failed to create blank cubemap");
+
+	glBindFramebuffer(GL_FRAMEBUFFER, mFramebuffer);
+
+	glBindRenderbuffer(GL_RENDERBUFFER, mDepthBuffer);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, mWidth, mHeight);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, mDepthBuffer);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X, mTextureId, 0);
+	assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE && "Failed to complete framebuffer");
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void RenderTargetCube::BindToWrite(int face)
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, mFramebuffer);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, mTextureId, 0);
+	assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE && "Failed to complete framebuffer");
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void RenderTargetCube::BindToRead(int unit)
+{
+//	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glActiveTexture(GL_TEXTURE0 + unit);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, mTextureId);
+	checkOpenGLError("Failed to unbind texture cubemap");
+}
+
+void RenderTargetCube::Unbind()
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 }

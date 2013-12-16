@@ -49,8 +49,8 @@ unsigned long timestamp()
 Application::Application(const std::string& title, int width, int height)
 {
 	static int argc = 1;
-	static char* argv[] = { "AVT" };
-	glutInit(&argc, argv);
+	static const char* argv[] = { "AVT" };
+	glutInit(&argc, (char**)argv);
 
 	glutInitContextVersion(3, 3);
 	glutInitContextFlags(GLUT_FORWARD_COMPATIBLE);

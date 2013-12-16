@@ -20,7 +20,6 @@ Renderer::Renderer() :
 
 	mPicking = false;
 	mLighting = true;
-	mNeedLightUpdate = true;
 
 	// load default materials
 	MaterialManager.Load("default_material", "./materials/default.mtl");
@@ -28,10 +27,10 @@ Renderer::Renderer() :
 
 	Handle debugNormals = ShaderManager.Load("_normals", "./shaders/debug.vert", "./shaders/debug.frag");
 	Handle debugDepth = ShaderManager.Load("_depth", "./shaders/simple.vert", "./shaders/depth.frag");
-	Handle noLight = ShaderManager.Load("noligth", "./shaders/simple.vert", "./shaders/simple.frag");
+	Handle noLight = ShaderManager.Load("nolight", "./shaders/simple.vert", "./shaders/simple.frag");
 	Handle realistic = ShaderManager.Load("realistic", "./shaders/simple.vert", "./shaders/realistic.frag");
 	Handle specular = ShaderManager.Load("specular", "./shaders/simple.vert", "./shaders/specular.frag");
-	Handle skybox = ShaderManager.Load("skybox", "./shaders/skybox.vert", "./shaders/skybox.frag");
+	/*Handle skybox = */ShaderManager.Load("skybox", "./shaders/skybox.vert", "./shaders/skybox.frag");
 
 	mDebugShaderNormals = ShaderManager[debugNormals]->GetRaw();
 	mDebugShaderDepth = ShaderManager[debugDepth]->GetRaw();
@@ -51,12 +50,15 @@ Renderer::Renderer() :
 	mSkybox->Load("./textures/skybox");
 	Logger::Debug << "Loaded cube map" << Logger::endl;
 
-	mCubemap = new Cubemap();
-	mCubemap->Load(1024,1024);
+	mRenderCube = new RenderTargetCube();
+	mRenderCube->Create(1024,1024);
 }
 
 Renderer::~Renderer()
 {
+	delete mSkybox;
+	delete mRenderCube;
+	delete mWhiteTexture;
 }
 
 int Renderer::Pick(Node* node, int x, int y)
@@ -131,23 +133,8 @@ void Renderer::BuildEnvironmentMap(Node* scene, const Vector3& center)
 
 	Camera camera = *mCamera;
 	mCamera->UpdateTransformation();
-	mCamera->SetPerspective(90.0f, 1.0f, 1.0f, 500.0f);
+	mCamera->SetPerspective(90.0f, 1.0f, 0.5f, 500.0f);
 	mCamera->SetViewport(1024, 1024);
-
-	GLuint framebuffer = 0, depthbuffer = 0;
-	glGenFramebuffers(1, &framebuffer);
-	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X, mCubemap->ID(), 0);
-
-	glGenRenderbuffers(1, &depthbuffer);
-	glBindRenderbuffer(GL_RENDERBUFFER, depthbuffer);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 1024, 1024);
-
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthbuffer);
-
-	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-	assert(status == GL_FRAMEBUFFER_COMPLETE && "failed to create framebuffer");
 
 	static Vector3 lookAt[] = { {1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1} };
 	static Vector3 up[] = { {0, -1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}, {0, -1, 0}, {0, -1, 0} };
@@ -156,28 +143,17 @@ void Renderer::BuildEnvironmentMap(Node* scene, const Vector3& center)
 	SetLighting(false);
 	for (int i = 0; i < 6; i++)
 	{
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, mCubemap->ID(), 0);
-		status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-		assert(status == GL_FRAMEBUFFER_COMPLETE && "failed to create framebuffer");
-//		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glClear(GL_DEPTH_BUFFER_BIT);
-
+		mRenderCube->BindToWrite(i);
 		mCamera->SetLookAt(center, center + lookAt[i], up[i]);
 		scene->Draw(*this);
 		mTransparentList.clear();
 	}
 	SetLighting(lighting);
+	mRenderCube->Unbind();
 
 	*mCamera = camera;
 
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	glDeleteRenderbuffers(1, &depthbuffer);
-	glDeleteFramebuffers(1, &framebuffer);
-
 	mCamera->SetViewport(mCamera->GetWidth(), mCamera->GetHeight());
-	glClear(GL_DEPTH_BUFFER_BIT);
 }
 
 ////////////////////////// DRAWING SCENE //////////////////////////////
@@ -189,7 +165,6 @@ void Renderer::SetDebug(DebugShader type)
 	{
 	case 0:
 		mShader = (mLighting ? mRealisticShader : mNoLightShader);
-		mNeedLightUpdate = true;
 		break;
 	case 1:
 		mShader = mDebugShaderNormals;
@@ -216,7 +191,6 @@ void Renderer::SetGlobalShader(const Program* shader)
 void Renderer::SetLighting(bool on)
 {
 	mLighting = on;
-	mNeedLightUpdate = true;
 	if (!mDebugging)
 	{
 		if (!on)
@@ -252,6 +226,8 @@ void Renderer::Draw(Geometry* geometry, bool overrideTransparency)
 {
 	assert(mCamera && "Renderer must have a camera attached");
 	checkOpenGLError("Failed somewhere else");
+
+	if (!geometry->IsEnabled()) return; // nothing to do here
 
 	const Material* material = geometry->GetMaterial() ? geometry->GetMaterial() : mDefaultMaterial;
 	if (material->mTransparency < 1.0f && overrideTransparency == false && !mDebugging)
@@ -297,20 +273,18 @@ void Renderer::Draw(Geometry* geometry, bool overrideTransparency)
 		Uniform::Bind(*shader, "ProjectionMatrix", ProjectionMatrix);
 		Uniform::Bind(*shader, "ModelViewMatrix", ModelViewMatrix);
 		Uniform::Bind(*shader, "ModelViewProjectionMatrix", ModelViewProjectionMatrix);
-		mCubemap->Bind(4);
+		mRenderCube->BindToRead(4);
 		mSkybox->Bind(5);
 		Uniform::Bind(*shader, "environment.map", 4); // GL_TEXTURE4
 		Uniform::Bind(*shader, "environment.skybox", 5); // GL_TEXTURE5
+		Uniform::Bind(*shader, "environment.ambient", {0.05f, 0.05f, 0.05f});
+//		Uniform::Bind(*shader, "environment.ambient", {0.6f, 0.8f, 0.7f}); // for skybox example
 		checkOpenGLError("Failed to bind matrixes");
 
 		Bind(geometry->GetMaterial(), shader);
 
-		if (mNeedLightUpdate)
-		{
-			// Logger::Debug << "Updating Lighting" << Logger::endl;
-			Bind(mLight, shader);
-			mNeedLightUpdate = false;
-		}
+		// TODO bind multiples lights
+		Bind(mLight, shader);
 	}
 
 	glDrawArrays(GL_TRIANGLES, 0, geometry->GetMesh()->GetCount());
@@ -323,7 +297,6 @@ void Renderer::Draw(Geometry* geometry, bool overrideTransparency)
 void Renderer::Draw(const Light* light)
 {
 	mLight = light;
-	mNeedLightUpdate = true;
 }
 
 void Renderer::Bind(const Light* light, const Program* shader)
@@ -336,7 +309,7 @@ void Renderer::Bind(const Light* light, const Program* shader)
 	assert(light != NULL && "cannot bind NULL light");
 
 	light->UpdateTransformation();
-	const Vector3& position = light->LocalTransform.Position();
+	const Vector3& position = light->LocalTransform.Orientation() * light->LocalTransform.Position();
 	Uniform::Bind(*shader, "lightSource.position", Vector4(position.X, position.Y, position.Z,
 			(light->mType == Light::Type::DIRECTIONAL ? 0.0f : 1.0f)));
 	Uniform::Bind(*shader, "lightSource.ambient", light->mAmbientColor);
@@ -345,7 +318,7 @@ void Renderer::Bind(const Light* light, const Program* shader)
 	Uniform::Bind(*shader, "lightSource.spotDirection", light->mDirection);
 	Uniform::Bind(*shader, "lightSource.spotExponent", light->mSpotExponent);
 	Uniform::Bind(*shader, "lightSource.spotCutoff", light->mCutoffAngle);
-	Uniform::Bind(*shader, "lightSource.constantAttenuation", 1);
+	Uniform::Bind(*shader, "lightSource.constantAttenuation", 1.0f);
 	Uniform::Bind(*shader, "lightSource.linearAttenuation", light->mLinearAtt);
 	Uniform::Bind(*shader, "lightSource.quadraticAttenuation", light->mQuadraticAtt);
 }

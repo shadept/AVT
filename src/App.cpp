@@ -18,10 +18,16 @@ App::App(ArgumentList args) :
 	mDebug = false;
 	mMaterial = 0;
 
-	mLight.LocalTransform.SetPosition({0.0f, 0.0f, 20.0f});
-	mLight.mAmbientColor = Vector3(0.1f, 0.1f, 0.1f);
+	mLight.mType = Light::Type::DIRECTIONAL;
+	mLight.LocalTransform.SetPosition({0.0f, 0.0f, 1.0f}); // this is a direction because it's a directional light
+//	mLight.mType = Light::Type::POINTLIGHT;
+//	mLight.LocalTransform.SetPosition({0.0f, 0.0f, 5.0f}); // this is a position because it's a point light
+	mLight.mAmbientColor = Vector3(1.0f, 1.0f, 1.0f);
 	mLight.mDiffuseColor = Vector3(1.0f, 1.0f, 1.0f);
 	mLight.mSpecularColor = Vector3(1.0f, 1.0f, 1.0f);
+
+	mWorld.AttachChild(&mLight);
+//	mWorld.AttachChild(mLight.mDebugSphere);
 
 	mRenderer->SetLighting(true);
 	mRenderer->Draw(&mLight);
@@ -40,6 +46,8 @@ App::App(ArgumentList args) :
 	MeshManager.Load("cube", "./models/cube.obj");
 	MeshManager.Load("cylinder", "./models/cylinder.obj");
 	MeshManager.Load("torus", "./models/torus.obj");
+	MeshManager.Load("knot", "./models/knot.obj");
+	MeshManager.Load("diamond", "./models/diamond.obj");
 	MeshManager.Load("suzanne", "./models/suzanne.obj");
 	MeshManager.Load("bunny", "./models/bunny.obj");
 
@@ -156,48 +164,51 @@ void App::OnKeyboard(unsigned char key, int x, int y)
 
 	if (key == 'm')
 	{
-		switch(mMaterial)
-		{
-		case 0: mModel->SetMaterial(MaterialManager["gold"]->GetRaw()); break;
-		case 1: mModel->SetMaterial(MaterialManager["chrome"]->GetRaw()); break;
-		case 2: mModel->SetMaterial(MaterialManager["ruby"]->GetRaw()); break;
-		case 3: mModel->SetMaterial(MaterialManager["glass"]->GetRaw());break;
-		default: mModel->SetMaterial(MaterialManager["default"]->GetRaw());
-		}
-		mMaterial = (mMaterial + 1) % 4;
+		static std::string material[5] = {"gold", "chrome", "ruby", "glass", "default"};
+		mMaterial = (mMaterial + 1) % 5;
+		mModel->SetMaterial(MaterialManager[material[mMaterial]]->GetRaw());
+//		switch(mMaterial)
+//		{
+//		case 0: mModel->SetMaterial(MaterialManager["gold"]->GetRaw()); break;
+//		case 1: mModel->SetMaterial(MaterialManager["chrome"]->GetRaw()); break;
+//		case 2: mModel->SetMaterial(MaterialManager["ruby"]->GetRaw()); break;
+//		case 3: mModel->SetMaterial(MaterialManager["glass"]->GetRaw());break;
+//		default: mModel->SetMaterial(MaterialManager["default"]->GetRaw());
+//		}
 	}
 
 	if (key == 'c')
 	{
-		static std::string models[6] = {"sphere", "cube", "cylinder", "torus", "suzanne", "bunny"};//, "diablo", "headcrab"};
+		static std::string models[8] = {"sphere", "cube", "cylinder", "torus", "knot", "diamond", "suzanne", "bunny"};//, "diablo", "headcrab"};
 		static int k = 0;
-		k = (k + 1) % 6;
-		switch (k)
-		{
-		case 0:
-		case 1:
-		case 2:
-		case 3:
-		case 4:
-			MaterialManager["glass"]->GetRaw()->mDiffuseMap = nullptr;
-			mModel->SetMesh(MeshManager[models[k]]->GetRaw());
-			break;
-		case 5:
-			mModel->SetMesh(MeshManager["bunny"]->GetRaw());
-			MaterialManager["glass"]->GetRaw()->mDiffuseMap = TextureManager["bunny"]->GetRaw();
-			MaterialManager["glass"]->GetRaw()->mBumpMap = NULL;
-			break;
-		case 6:
-			mModel->SetMesh(MeshManager["diablo"]->GetRaw());
-			MaterialManager["glass"]->GetRaw()->mDiffuseMap = TextureManager["Diablo_diff.png"]->GetRaw();
-			MaterialManager["glass"]->GetRaw()->mBumpMap = TextureManager["Diablo_norm.png"]->GetRaw();
-			break;
-		case 7:
-			mModel->SetMesh(MeshManager["headcrab"]->GetRaw());
-			MaterialManager["glass"]->GetRaw()->mDiffuseMap = TextureManager["headcrab.png"]->GetRaw();
-			MaterialManager["glass"]->GetRaw()->mBumpMap = TextureManager["headcrab_normal.png"]->GetRaw();
-			break;
-		}
+		k = (k + 1) % 8;
+		mModel->SetMesh(MeshManager[models[k]]->GetRaw());
+//		switch (k)
+//		{
+//		case 0:
+//		case 1:
+//		case 2:
+//		case 3:
+//		case 4:
+//			MaterialManager["glass"]->GetRaw()->mDiffuseMap = nullptr;
+//			mModel->SetMesh(MeshManager[models[k]]->GetRaw());
+//			break;
+//		case 5:
+//			mModel->SetMesh(MeshManager["bunny"]->GetRaw());
+//			MaterialManager["glass"]->GetRaw()->mDiffuseMap = TextureManager["bunny"]->GetRaw();
+//			MaterialManager["glass"]->GetRaw()->mBumpMap = NULL;
+//			break;
+//		case 6:
+//			mModel->SetMesh(MeshManager["diablo"]->GetRaw());
+//			MaterialManager["glass"]->GetRaw()->mDiffuseMap = TextureManager["Diablo_diff.png"]->GetRaw();
+//			MaterialManager["glass"]->GetRaw()->mBumpMap = TextureManager["Diablo_norm.png"]->GetRaw();
+//			break;
+//		case 7:
+//			mModel->SetMesh(MeshManager["headcrab"]->GetRaw());
+//			MaterialManager["glass"]->GetRaw()->mDiffuseMap = TextureManager["headcrab.png"]->GetRaw();
+//			MaterialManager["glass"]->GetRaw()->mBumpMap = TextureManager["headcrab_normal.png"]->GetRaw();
+//			break;
+//		}
 	}
 
 	if (key == 'k')
@@ -235,9 +246,10 @@ void App::OnKeyboard(unsigned char key, int x, int y)
 
 	static Vector3 lookAt[] = { {1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1} };
 	static Vector3 up[] = { {0, 1, 0}, {0, 1, 0}, {0, 0, -1}, {0, 0, 1}, {0, 1, 0}, {0, 1, 0} };
+	static float ratio = (float) mWindow->GetWidth() / mWindow->GetHeight();
 	switch(key)
 	{
-	case '0': mCamera.SetPerspective(35.0f, 1.0f, 1.0f, 50.0f); mDistance = 5.0f; mCamera.SetLookAt({0.0f, 0.0f, mDistance}, Vector3::Zero); break;
+	case '0': mCamera.SetPerspective(35.0f, ratio, 1.0f, 50.0f); mDistance = 5.0f; mCamera.SetLookAt({0.0f, 0.0f, mDistance}, Vector3::Zero); break;
 	case '1': mDistance = 0.0f; mCamera.SetPerspective(90.0f, 1.0f, 1.0f, 50.0f); mCamera.SetLookAt(Vector3::Zero, lookAt[0], up[0]); break;
 	case '2': mDistance = 0.0f; mCamera.SetPerspective(90.0f, 1.0f, 1.0f, 50.0f); mCamera.SetLookAt(Vector3::Zero, lookAt[1], up[1]); break;
 	case '3': mDistance = 0.0f; mCamera.SetPerspective(90.0f, 1.0f, 1.0f, 50.0f); mCamera.SetLookAt(Vector3::Zero, lookAt[2], up[2]); break;
@@ -261,10 +273,14 @@ void App::OnUpdate(const Real delta)
 	counter += delta;
 	envMapCounter += delta;
 
-	if (envMapCounter > 1.0f/6.0f) // every 1/6 seconds
+	if (envMapCounter > 1.0f/30.0f) // every 1/30 seconds
 	{
+		mModel->Enabled(false);
 		mRenderer->BuildEnvironmentMap(&mWorld, Vector3::Zero);
+		// Correction transparent refraction
+//		mRenderer->BuildEnvironmentMap(&mWorld, mCamera.LocalTransform.Orientation() * -mCamera.LocalTransform.Position());
 		envMapCounter = 0.0f;
+		mModel->Enabled(true);
 	}
 
 	while (counter >= 1.0f)
@@ -282,20 +298,21 @@ void App::OnUpdate(const Real delta)
 	Real offX = Math::clamp(mOffsetX * 130.0f, -1000.0f, 1000.0f);
 	Real offY = Math::clamp(mOffsetY * 130.0f, -1000.0f, 1000.0f);
 
-	if (mMovingSphere)
-	{
-		mSphere->LocalTransform.Rotate(Quaternion::fromAxisAngle(mSphere->LocalTransform.Up(), -offX * delta / 200.0f));
-		mSphere->LocalTransform.Rotate(Quaternion::fromAxisAngle(mSphere->LocalTransform.Side(), -offY * delta / 200.0f));
-	}
-	else
-	{
-		mCenter->LocalTransform.Rotate(Quaternion::fromAxisAngle(mCenter->LocalTransform.Up(), offX * delta));
-		mCenter->LocalTransform.Rotate(Quaternion::fromAxisAngle(mCenter->LocalTransform.Side(), offY * delta));
-	}
+//	if (mMovingSphere)
+//	{
+//		mSphere->LocalTransform.Rotate(Quaternion::fromAxisAngle(mSphere->LocalTransform.Up(), -offX * delta / 200.0f));
+//		mSphere->LocalTransform.Rotate(Quaternion::fromAxisAngle(mSphere->LocalTransform.Side(), -offY * delta / 200.0f));
+//	}
+//	else
+//	{
+//		mCenter->LocalTransform.Rotate(Quaternion::fromAxisAngle(mCenter->LocalTransform.Up(), offX * delta));
+//		mCenter->LocalTransform.Rotate(Quaternion::fromAxisAngle(mCenter->LocalTransform.Side(), offY * delta));
+//	}
 
 	mCamera.LocalTransform.SetPosition(Vector3(0.0f, 0.0f, -mDistance));
-//	mCamera.LocalTransform.Rotate(Quaternion::fromAxisAngle(mCamera.LocalTransform.Up(), offX * delta));
-//	mCamera.LocalTransform.Rotate(Quaternion::fromAxisAngle(mCamera.LocalTransform.Side(), offY * delta));
+//	mLight.LocalTransform.SetPosition({0.0f, 0.0f, mDistance});
+	mCamera.LocalTransform.Rotate(Quaternion::fromAxisAngle(mCamera.LocalTransform.Up(), offX * delta));
+	mCamera.LocalTransform.Rotate(Quaternion::fromAxisAngle(mCamera.LocalTransform.Side(), offY * delta));
 
 	// friction baby!
 	if (!mDragging)
