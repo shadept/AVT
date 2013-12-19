@@ -31,7 +31,7 @@ const Shader& Shader::Source(const std::string& src) const
 const Shader& Shader::Compile() const
 {
 	glCompileShader(mShader);
-	assert(checkInfoLog(mShader, GL_COMPILE_STATUS, glGetShaderiv, glGetShaderInfoLog) == true);
+//	assert(checkInfoLog(mShader, GL_COMPILE_STATUS, glGetShaderiv, glGetShaderInfoLog) == true);
 	return (*this);
 }
 
@@ -114,7 +114,7 @@ const Program& Program::DetachShader(const Shader& shader) const
 const Program& Program::Link() const
 {
 	glLinkProgram(mProgram);
-	assert(checkInfoLog(mProgram, GL_LINK_STATUS, glGetProgramiv, glGetProgramInfoLog) == true);
+//	assert(checkInfoLog(mProgram, GL_LINK_STATUS, glGetProgramiv, glGetProgramInfoLog) == true);
 	return (*this);
 }
 

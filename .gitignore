@@ -10,6 +10,10 @@ vs/Release
 vs/assignment/Debug
 vs/assignment/Release
 vs/assignment/textures/*.db
+vs/assignment/materials
+vs/assignment/models
+vs/assignment/shaders
+vs/assignment/textures
 .cproject
 .project
 /Debug

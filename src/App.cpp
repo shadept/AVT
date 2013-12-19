@@ -1,6 +1,8 @@
 #include "App.h"
 #include "Mesh.h"
 
+#include "IcoSphere.h"
+
 #include <fstream>
 #include <sstream>
 
@@ -88,6 +90,7 @@ App::App(ArgumentList args) :
 	mWorld.AttachChild(mCenter);
 
 	mSphere = new Geometry("sphere");
+	//mSphere->SetMesh(IcoSphere::Create(0));
 	mSphere->SetMesh(MeshManager["kaleidoscope"]->GetRaw());
 	mSphere->SetMaterial(MaterialManager["kaleidoscope"]->GetRaw());
 	mSphere->LocalTransform.SetPosition({ 0.0f, 0.0f, 0.0f });

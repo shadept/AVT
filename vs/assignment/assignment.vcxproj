@@ -90,9 +90,9 @@
     <ClCompile Include="..\..\src\App.cpp" />
     <ClCompile Include="..\..\src\Application.cpp" />
     <ClCompile Include="..\..\src\Camera.cpp" />
-    <ClCompile Include="..\..\src\Context.cpp" />
     <ClCompile Include="..\..\src\Geometry.cpp" />
     <ClCompile Include="..\..\src\GlobalState.cpp" />
+    <ClCompile Include="..\..\src\IcoSphere.cpp" />
     <ClCompile Include="..\..\src\Light.cpp" />
     <ClCompile Include="..\..\src\lodepng.cpp" />
     <ClCompile Include="..\..\src\main.cpp" />
@@ -112,13 +112,17 @@
     <ClCompile Include="..\..\src\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\src\Logger.inl" />
+    <None Include="..\..\src\Manager.inl" />
+  </ItemGroup>
+  <ItemGroup>
     <ClInclude Include="..\..\src\App.h" />
     <ClInclude Include="..\..\src\Application.h" />
     <ClInclude Include="..\..\src\Camera.h" />
     <ClInclude Include="..\..\src\Common.h" />
-    <ClInclude Include="..\..\src\Context.h" />
     <ClInclude Include="..\..\src\Geometry.h" />
     <ClInclude Include="..\..\src\GlobalState.h" />
+    <ClInclude Include="..\..\src\IcoSphere.h" />
     <ClInclude Include="..\..\src\Light.h" />
     <ClInclude Include="..\..\src\lodepng.h" />
     <ClInclude Include="..\..\src\logger.h" />
