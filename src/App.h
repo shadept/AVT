@@ -37,7 +37,7 @@ private:
 	bool mDragging, mFriction;
 	bool mDebug;
 	bool mMovingSphere = true;
-	int mMaterial;
+	int mMaterial, subDivision = 1;
 
 	Node* mCenter;
 	Geometry* mSphere, *mModel, *mDiablo;

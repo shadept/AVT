@@ -25,7 +25,11 @@ void checkOpenGLError(std::string error)
 	}
 }
 
+#ifdef _MSC_VER
+bool checkInfoLog(GLuint obj, GLenum what, PFNGLGETSHADERIVPROC glGetiv, PFNGLGETSHADERINFOLOGPROC glGetInfoLog)
+#else
 bool checkInfoLog(GLuint obj, GLenum what, glGetObjectiv glGetiv, glGetObjectInfoLog glGetInfoLog)
+#endif // _MSC_VER
 {
 	GLint status;
 	glGetiv(obj, what, &status);

@@ -61,12 +61,6 @@ uniform Environment environment;
 uniform Light lightSource;
 uniform Material material;
 
-in vec4 worldPosition;
-in vec3 worldNormal;
-in vec3 vReflect;
-in vec3 vRefract[3];
-in float vReflectionFactor;
-
 vec3 AmbientContribution()
 {
 	vec3 textureContribution = texture(material.ambientTexture, exTexCoords).rgb;
@@ -97,11 +91,11 @@ vec3 normalFromTexture(vec3 normal, vec3 tangent, vec2 texCoords)
 vec3 getNormal(vec3 normal, vec3 tangent, vec2 texCoords)
 {
 	vec3 _normal = normalize(normal);
-	vec3 bumpMapNormal = texture(material.normalTexture, texCoords).rgb;
-	if (equal(bumpMapNormal, vec3(1.0)) == false)
-	{
-		_normal = normalFromTexture(_normal, normalize(tangent), texCoords);
-	}
+//	vec3 bumpMapNormal = texture(material.normalTexture, texCoords).rgb;
+//	if (equal(bumpMapNormal, vec3(1.0)) == false)
+//	{
+//		_normal = normalFromTexture(_normal, normalize(tangent), texCoords);
+//	}
 
 	return _normal;
 }
@@ -164,9 +158,9 @@ void main(void)
 		vec3 vReflected = reflect(-view_world, worldNormal);
 
 		// Chromatic Aberration
-		vec3 vRefractedR = refract(-view_world, worldNormal, material.refractionIndex);
-		vec3 vRefractedG = refract(-view_world, worldNormal, material.refractionIndex * 0.99);
-		vec3 vRefractedB = refract(-view_world, worldNormal, material.refractionIndex * 0.98);
+		vec3 vRefractedR = refract(-view_world, worldNormal, 1 / material.refractionIndex);
+		vec3 vRefractedG = refract(-view_world, worldNormal, 1 / material.refractionIndex * 0.99);
+		vec3 vRefractedB = refract(-view_world, worldNormal, 1 / material.refractionIndex * 0.98);
 
 		vec3 cRefracted;
 		cRefracted.r = texture(environment.map, vRefractedR).r;
@@ -183,9 +177,10 @@ void main(void)
 	else if (material.reflectivity > 0.0)
 	{
 		vec3 vReflected = reflect(-view_world, worldNormal);
-		vec4 reflectedColor = textureCube(environment.map, vReflected);
+		vec4 reflectedColor = texture(environment.map, vReflected);
 		color = mix(color, reflectedColor.rgb, material.reflectivity);
 	}
 
 	FragmentColor = vec4(color, 1.0);
+	//FragmentColor = vec4(exTexCoords.s, exTexCoords.t, 0.0, 1.0);
 }

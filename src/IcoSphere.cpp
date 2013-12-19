@@ -1,5 +1,18 @@
 #include "IcoSphere.h"
 
+IcoSphere::Vertice operator - (const IcoSphere::Vertice& lhs, const IcoSphere::Vertice& rhs)
+{
+	return IcoSphere::Vertice({ lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z });
+}
+IcoSphere::Vertice operator ^ (const IcoSphere::Vertice& lhs, const IcoSphere::Vertice& rhs)
+{
+	return IcoSphere::Vertice({ lhs.y * rhs.z - lhs.z * rhs.y, lhs.z * rhs.x - lhs.x * rhs.z, lhs.x * rhs.y - lhs.y * rhs.x });
+}
+IcoSphere::Vertice operator * (const IcoSphere::Vertice& lhs, const int& rhs)
+{
+	return IcoSphere::Vertice({ lhs.x * rhs, lhs.y * rhs, lhs.z * rhs });
+}
+
 int IcoSphere::addVertex(Vertice v, vector<Vertice>& vertices, int& index)
 {
 	float length = Math::sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
@@ -8,8 +21,18 @@ int IcoSphere::addVertex(Vertice v, vector<Vertice>& vertices, int& index)
 	return index++;
 }
 
+vector<IcoSphere::Vertice> IcoSphere::calculateNormals(vector<IcoSphere::Face> faces, vector<IcoSphere::Vertice> vertices)
+{
+	vector<IcoSphere::Vertice>* normals = new vector<IcoSphere::Vertice>();
+	for (auto tri : faces)
+	{
+		normals->push_back((vertices[tri.v2] - vertices[tri.v1]) ^ (vertices[tri.v3] - vertices[tri.v1]));
+	}
+	return *normals;
+}
+
 // return index of point in the middle of p1 and p2
-int IcoSphere::getMiddlePoint(int v1, int v2, vector<Vertice>& vertices, int index, map<Int64, int>& middlePointIndexCache)
+int IcoSphere::getMiddlePoint(int v1, int v2, vector<Vertice>& vertices, int& index, map<Int64, int>& middlePointIndexCache)
 {
 	// first check if we have it already
 	Int64 smallerIndex = v1 < v2 ? v1 : v2;
@@ -63,6 +86,16 @@ Mesh* IcoSphere::Create(int recursionLevel)
 	// create 20 triangles of the icosahedron
 	vector<Face>* faces = new vector<Face>();
 
+	TexCoords A = { 0.0f, 1.0f }; TexCoords B = { 0.5f, 0.0f }; TexCoords C = { 1.0f, 1.0f };
+
+	vector<TexCoords> texCoords{ 12, TexCoords{ 0.0f, 0.0f } };
+	texCoords[0] = A;
+	texCoords[5] = B;
+	texCoords[1] = C;
+	texCoords[7] = B;
+	texCoords[10] = C;
+	texCoords[11] = B;
+
 	// 5 faces around point 0
 	faces->push_back(Face({ 0, 11, 5 }));
 	faces->push_back(Face({ 0, 5, 1 }));
@@ -111,14 +144,16 @@ Mesh* IcoSphere::Create(int recursionLevel)
 		faces = faces2;
 	}
 
-	static Mesh::Normal normal = { 0.0f, 1.0f, 0.0f };
 	vector<Mesh::Vertex> vertexData;
+	vector<Vertice> normals = calculateNormals(*faces, *vertices);
+	int normalIndex = 0;
 
 	for (auto tri : *faces)
 	{
-		vertexData.push_back({ (*vertices)[tri.v1], normal });
-		vertexData.push_back({ (*vertices)[tri.v2], normal });
-		vertexData.push_back({ (*vertices)[tri.v3], normal });
+		vertexData.push_back({ (*vertices)[tri.v1], normals[normalIndex] * (-1), A });
+		vertexData.push_back({ (*vertices)[tri.v3], normals[normalIndex] * (-1), B });
+		vertexData.push_back({ (*vertices)[tri.v2], normals[normalIndex] * (-1), C });
+		normalIndex++;
 	}
 
 	Mesh* m = new Mesh();

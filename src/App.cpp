@@ -63,8 +63,8 @@ App::App(ArgumentList args) :
 
 	TextureManager.Load("bunny", "./textures/bunny.png");
 
-	TextureManager.Load("kaleidoscope0", "./textures/kaleidoscope0.png");
-	TextureManager.Load("kaleidoscope1", "./textures/kaleidoscope1.png");
+	TextureManager.Load("image4", "./textures/image4.png");
+	TextureManager.Load("image9", "./textures/image9.png");
 
 	Material* bunnyMaterial = new Material();
 	bunnyMaterial->mAmbient = Vector3(0.1f, 0.05f, 0.0f);
@@ -79,7 +79,7 @@ App::App(ArgumentList args) :
 	kaleidoscopeMaterial->mDiffuse = Vector3(1.0f, 1.0f, 1.0f);
 	kaleidoscopeMaterial->mSpecular = Vector3(0.0f, 0.0f, 0.0f);
 	kaleidoscopeMaterial->mShininess = 0.0f;
-	kaleidoscopeMaterial->mDiffuseMap = TextureManager["kaleidoscope0"]->GetRaw();
+	kaleidoscopeMaterial->mDiffuseMap = TextureManager["image4"]->GetRaw();
 	MaterialManager.Add("kaleidoscope", kaleidoscopeMaterial);
 
 	MaterialManager.Load("diablo_material", "./materials/diablo.mtl");
@@ -90,8 +90,8 @@ App::App(ArgumentList args) :
 	mWorld.AttachChild(mCenter);
 
 	mSphere = new Geometry("sphere");
-	//mSphere->SetMesh(IcoSphere::Create(0));
-	mSphere->SetMesh(MeshManager["kaleidoscope"]->GetRaw());
+	mSphere->SetMesh(IcoSphere::Create(subDivision));
+	//mSphere->SetMesh(MeshManager["kaleidoscope"]->GetRaw());
 	mSphere->SetMaterial(MaterialManager["kaleidoscope"]->GetRaw());
 	mSphere->LocalTransform.SetPosition({ 0.0f, 0.0f, 0.0f });
 	mSphere->LocalTransform.SetScale({ 20.0f, 20.0f, 20.0f });
@@ -103,7 +103,7 @@ App::App(ArgumentList args) :
 	mDiablo->LocalTransform.SetScale({0.5f, 0.5f, 0.5f});
 	mDiablo->LocalTransform.SetRotation(Vector3::AxisY, 180);
 
-	mCenter->AttachChild(mDiablo);
+	//mCenter->AttachChild(mDiablo);
 }
 
 App::~App()
@@ -229,8 +229,8 @@ void App::OnKeyboard(unsigned char key, int x, int y)
 		k = (k + 1) % 3;
 		switch (k)
 		{
-		case 0: mSphere->SetShader(NULL); MaterialManager["kaleidoscope"]->GetRaw()->mDiffuseMap = TextureManager["kaleidoscope0"]->GetRaw(); break;
-		case 1: MaterialManager["kaleidoscope"]->GetRaw()->mDiffuseMap = TextureManager["kaleidoscope1"]->GetRaw(); break;
+		case 0: mSphere->SetShader(NULL); MaterialManager["kaleidoscope"]->GetRaw()->mDiffuseMap = TextureManager["image4"]->GetRaw(); break;
+		case 1: MaterialManager["kaleidoscope"]->GetRaw()->mDiffuseMap = TextureManager["image9"]->GetRaw(); break;
 		case 2: mSphere->SetShader(ShaderManager["skybox"]->GetRaw()); break;
 		}
 	}
@@ -255,6 +255,20 @@ void App::OnKeyboard(unsigned char key, int x, int y)
 
 	if (key == ' ')
 		mMovingSphere = !mMovingSphere;
+
+	if (key == 'o')
+	{
+		subDivision = Math::max(subDivision - 1, 0);
+		delete mSphere->GetMesh();
+		mSphere->SetMesh(IcoSphere::Create(subDivision));
+	}
+
+	if (key == 'p')
+	{
+		subDivision = Math::min(subDivision + 1, 3);
+		delete mSphere->GetMesh();
+		mSphere->SetMesh(IcoSphere::Create(subDivision));
+	}
 
 	static Vector3 lookAt[] = { {1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1} };
 	static Vector3 up[] = { {0, 1, 0}, {0, 1, 0}, {0, 0, -1}, {0, 0, 1}, {0, 1, 0}, {0, 1, 0} };
