@@ -37,6 +37,15 @@ Ni 1.47
 d 0.21
 illum 2
 
+newmtl clear_glass
+Ka 0.576471 0.647059 0.666667
+Kd 0.921569 0.945098 0.937255
+Ks 1 1 1
+Ns 0.75
+Ni 1
+d 0.21
+illum 2
+
 newmtl pearl
 Ka 0.25 0.20725 0.20725
 Kd 1.0 0.829 0.829
@@ -52,4 +61,13 @@ Ks 0.727811 0.626959 0.626959
 Ns 0.6
 Ni 1.76
 d 0.55
+illum 2
+
+newmtl diamond
+Ka 0 0 0
+Kd 0.638 0.638 0.638
+Ks 0 0 0
+Ns 0.75
+Ni 2.417
+d 0.284
 illum 2

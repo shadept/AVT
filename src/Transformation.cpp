@@ -36,7 +36,9 @@ Transformation Transformation::operator *(const Transformation& rhs) const
 {
 	Transformation ret;
 	ret.mPosition = mRotation * (mScale * rhs.mPosition) + mPosition;
+//	ret.mPosition = rhs * mPosition;
 	ret.mRotation = mRotation * rhs.mRotation;
+//	ret.mRotation = rhs.mRotation * mRotation;
 	ret.mScale = mScale * rhs.mScale;
 	return ret;
 }

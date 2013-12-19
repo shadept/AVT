@@ -1,5 +1,34 @@
 #include "Matrix4.h"
 
+
+
+Matrix3::Matrix3()
+{
+	m[0] = m[4] = m[8] = (Real) 1.0f;
+	m[1] = m[2] = m[3] = m[5] = m[6] = m[7] = (Real) 0.0f;
+}
+
+Matrix3::Matrix3(const Matrix4& src)
+{
+	m[0] = src[0];
+	m[1] = src[1];
+	m[2] = src[2];
+	m[3] = src[4];
+	m[4] = src[5];
+	m[5] = src[6];
+	m[6] = src[8];
+	m[7] = src[9];
+	m[8] = src[10];
+}
+
+Vector3 Matrix3::operator *(const Vector3& v) const
+{
+	return Vector3(
+			m[0] * v.X + m[1] * v.Y + m[2] * v.Z,
+			m[3] * v.X + m[4] * v.Y + m[5] * v.Z,
+			m[6] * v.X + m[7] * v.Y + m[8] * v.Z);
+}
+
 Matrix4 Matrix4::fromAxisAngle(const Vector3& axis, Real angle)
 {
 	Real c = Math::cos(Math::radians(angle));

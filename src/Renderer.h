@@ -54,7 +54,6 @@ public:
 private:
 	void Bind(const Light* light, const Program* shader);
 	void Bind(const Material* material, const Program* shader);
-	void Bind(const Program* shader);
 
 	// Render specific variables
 	Material* mDefaultMaterial;
@@ -63,7 +62,7 @@ private:
 	Program* mRealisticShader;
 	Program* mSpecularShader;
 	Texture* mWhiteTexture;
-	RenderTargetCube* mRenderCube;
+	RenderTargetCube* mEnvironmentMap;
 	Cubemap* mSkybox;
 
 	// Other variables

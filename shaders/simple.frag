@@ -17,10 +17,15 @@ struct Material
 {
 	sampler2D ambientTexture;
 	sampler2D diffuseTexture;
+	sampler2D specularTexture;
+	sampler2D normalTexture;
 	vec3 ambient;
 	vec3 diffuse;
 	vec3 specular;
-	float transparency;
+	float shininess;
+	float transparency;		// [0 .. 1]
+	float refractionIndex;	// [1 .. 2] ?
+	float reflectivity;		// [0 .. 1]
 };
 
 uniform Environment environment;

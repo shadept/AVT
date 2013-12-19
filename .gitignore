@@ -12,3 +12,4 @@ vs/assignment/Release
 vs/assignment/textures/*.db
 .cproject
 .project
+/Debug

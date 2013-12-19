@@ -17,7 +17,6 @@ Renderer::Renderer() :
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 
-
 	mPicking = false;
 	mLighting = true;
 
@@ -47,17 +46,18 @@ Renderer::Renderer() :
 	mWhiteTexture->Load(white, 1, 1);
 
 	mSkybox = new Cubemap();
-	mSkybox->Load("./textures/skybox");
+//	mSkybox->Load("./textures/skybox");
+	mSkybox->Load("./textures/debug");
 	Logger::Debug << "Loaded cube map" << Logger::endl;
 
-	mRenderCube = new RenderTargetCube();
-	mRenderCube->Create(1024,1024);
+	mEnvironmentMap = new RenderTargetCube();
+	mEnvironmentMap->Create(1024,1024);
 }
 
 Renderer::~Renderer()
 {
 	delete mSkybox;
-	delete mRenderCube;
+	delete mEnvironmentMap;
 	delete mWhiteTexture;
 }
 
@@ -143,13 +143,13 @@ void Renderer::BuildEnvironmentMap(Node* scene, const Vector3& center)
 	SetLighting(false);
 	for (int i = 0; i < 6; i++)
 	{
-		mRenderCube->BindToWrite(i);
+		mEnvironmentMap->BindToWrite(i);
 		mCamera->SetLookAt(center, center + lookAt[i], up[i]);
 		scene->Draw(*this);
 		mTransparentList.clear();
 	}
 	SetLighting(lighting);
-	mRenderCube->Unbind();
+	mEnvironmentMap->Unbind();
 
 	*mCamera = camera;
 
@@ -267,18 +267,23 @@ void Renderer::Draw(Geometry* geometry, bool overrideTransparency)
 
 		shader->Use();
 //		Uniform::Bind(*shader, "CameraPosition", mCamera->WorldTransform.Orientation() * mCamera->WorldTransform.Position());
+//		Matrix3 rotation{ViewMatrix};
+//		Vector3 cameraPosition = ViewMatrix * Vector3{ViewMatrix[3], ViewMatrix[7], ViewMatrix[11]};
+////		Vector3 cameraPosition = mCamera->WorldTransform.Orientation() * mCamera->WorldTransform.Position(); // this thing is messed up...
+//		cameraPosition.Z = -cameraPosition.Z;
+//		std::cerr <<  cameraPosition << std::endl;
+//		Uniform::Bind(*shader, "CameraPosition", cameraPosition);
 		Uniform::Bind(*shader, "NormalMatrix", NormalMatrix);
 		Uniform::Bind(*shader, "ModelMatrix", ModelMatrix);
 		Uniform::Bind(*shader, "ViewMatrix", ViewMatrix);
 		Uniform::Bind(*shader, "ProjectionMatrix", ProjectionMatrix);
 		Uniform::Bind(*shader, "ModelViewMatrix", ModelViewMatrix);
 		Uniform::Bind(*shader, "ModelViewProjectionMatrix", ModelViewProjectionMatrix);
-		mRenderCube->BindToRead(4);
+		mEnvironmentMap->BindToRead(4);
 		mSkybox->Bind(5);
 		Uniform::Bind(*shader, "environment.map", 4); // GL_TEXTURE4
 		Uniform::Bind(*shader, "environment.skybox", 5); // GL_TEXTURE5
 		Uniform::Bind(*shader, "environment.ambient", {0.05f, 0.05f, 0.05f});
-//		Uniform::Bind(*shader, "environment.ambient", {0.6f, 0.8f, 0.7f}); // for skybox example
 		checkOpenGLError("Failed to bind matrixes");
 
 		Bind(geometry->GetMaterial(), shader);
@@ -357,13 +362,4 @@ void Renderer::Bind(const Material* material, const Program* shader)
 	Uniform::Bind(*shader, "material.reflectivity", material->mReflectivity);
 
 	checkOpenGLError("Failed to bind material");
-
-//	glActiveTexture(GL_TEXTURE0);
-//	glDisable(GL_TEXTURE_2D);
-//	glActiveTexture(GL_TEXTURE1);
-//	glDisable(GL_TEXTURE_2D);
-//	glActiveTexture(GL_TEXTURE2);
-//	glDisable(GL_TEXTURE_2D);
-//	glActiveTexture(GL_TEXTURE3);
-//	glDisable(GL_TEXTURE_2D);
 }

@@ -38,9 +38,10 @@ App::App(ArgumentList args) :
 	mRenderer->SetCamera(&mCamera);
 
 	mModel = new Geometry("model");
+	mWorld.AttachChild(mModel);
 
 	mCenter = new Node("center");
-	mCenter->AttachChild(mModel);
+//	mCenter->AttachChild(mModel);
 
 	MeshManager.Load("sphere", "./models/sphere.obj");
 	MeshManager.Load("cube", "./models/cube.obj");
@@ -93,6 +94,13 @@ App::App(ArgumentList args) :
 	mSphere->LocalTransform.SetScale({ 20.0f, 20.0f, 20.0f });
 
 	mWorld.AttachChild(mSphere);
+
+	mDiablo = new Geometry("ball", MeshManager["diablo"]->GetRaw(), MaterialManager["diablo"]->GetRaw());
+	mDiablo->LocalTransform.SetPosition({0.f, -.3f, 0.f});
+	mDiablo->LocalTransform.SetScale({0.5f, 0.5f, 0.5f});
+	mDiablo->LocalTransform.SetRotation(Vector3::AxisY, 180);
+
+	mCenter->AttachChild(mDiablo);
 }
 
 App::~App()
@@ -100,6 +108,7 @@ App::~App()
 	delete mCenter;
 	delete mSphere;
 	delete mModel;
+	delete mDiablo;
 }
 
 void App::OnDraw()
@@ -164,8 +173,8 @@ void App::OnKeyboard(unsigned char key, int x, int y)
 
 	if (key == 'm')
 	{
-		static std::string material[5] = {"gold", "chrome", "ruby", "glass", "default"};
-		mMaterial = (mMaterial + 1) % 5;
+		static std::string material[7] = {"gold", "chrome", "ruby", "clear_glass", "glass", "diamond", "default"};
+		mMaterial = (mMaterial + 1) % 7;
 		mModel->SetMaterial(MaterialManager[material[mMaterial]]->GetRaw());
 //		switch(mMaterial)
 //		{
@@ -235,8 +244,8 @@ void App::OnKeyboard(unsigned char key, int x, int y)
 
 	if (key == 'i')
 	{
-		std::cout << "Position: " << mCamera.LocalTransform.Position();
-		Vector3 v = mCamera.LocalTransform.Orientation() * mCamera.LocalTransform.Position();
+		std::cout << "Position: " << mCamera.WorldTransform.Position();
+		Vector3 v = mCamera.WorldTransform.Orientation() * mCamera.WorldTransform.Position();
 		std::cout << "Transformed: " << v;
 		std::cout << "Length: " << v.length() << std::endl;
 	}
@@ -276,9 +285,10 @@ void App::OnUpdate(const Real delta)
 	if (envMapCounter > 1.0f/30.0f) // every 1/30 seconds
 	{
 		mModel->Enabled(false);
-		mRenderer->BuildEnvironmentMap(&mWorld, Vector3::Zero);
-		// Correction transparent refraction
-//		mRenderer->BuildEnvironmentMap(&mWorld, mCamera.LocalTransform.Orientation() * -mCamera.LocalTransform.Position());
+//		Vector3 position = mCamera.WorldTransform.Orientation() * -mCamera.WorldTransform.Position();
+//		position.Z = -position.Z;
+		Vector3 position = mModel->WorldTransform.Position();
+		mRenderer->BuildEnvironmentMap(&mWorld, position);
 		envMapCounter = 0.0f;
 		mModel->Enabled(true);
 	}
@@ -298,21 +308,29 @@ void App::OnUpdate(const Real delta)
 	Real offX = Math::clamp(mOffsetX * 130.0f, -1000.0f, 1000.0f);
 	Real offY = Math::clamp(mOffsetY * 130.0f, -1000.0f, 1000.0f);
 
-//	if (mMovingSphere)
-//	{
+	if (mMovingSphere)
+	{
 //		mSphere->LocalTransform.Rotate(Quaternion::fromAxisAngle(mSphere->LocalTransform.Up(), -offX * delta / 200.0f));
 //		mSphere->LocalTransform.Rotate(Quaternion::fromAxisAngle(mSphere->LocalTransform.Side(), -offY * delta / 200.0f));
-//	}
-//	else
-//	{
-//		mCenter->LocalTransform.Rotate(Quaternion::fromAxisAngle(mCenter->LocalTransform.Up(), offX * delta));
-//		mCenter->LocalTransform.Rotate(Quaternion::fromAxisAngle(mCenter->LocalTransform.Side(), offY * delta));
-//	}
+		mCamera.LocalTransform.SetPosition(Vector3(0.0f, 0.0f, -mDistance));
+		mCamera.LocalTransform.Rotate(Quaternion::fromAxisAngle(mCamera.LocalTransform.Up(), offX * delta));
+		mCamera.LocalTransform.Rotate(Quaternion::fromAxisAngle(mCamera.LocalTransform.Side(), offY * delta));
+	}
+	else
+	{
+		mCenter->LocalTransform.SetPosition(Vector3(0.0f, 0.0f, mDistance));
+		mCenter->LocalTransform.Rotate(Quaternion::fromAxisAngle(mCenter->LocalTransform.Up(), offX * delta));
+		mCenter->LocalTransform.Rotate(Quaternion::fromAxisAngle(mCenter->LocalTransform.Side(), offY * delta));
+	}
 
-	mCamera.LocalTransform.SetPosition(Vector3(0.0f, 0.0f, -mDistance));
-//	mLight.LocalTransform.SetPosition({0.0f, 0.0f, mDistance});
-	mCamera.LocalTransform.Rotate(Quaternion::fromAxisAngle(mCamera.LocalTransform.Up(), offX * delta));
-	mCamera.LocalTransform.Rotate(Quaternion::fromAxisAngle(mCamera.LocalTransform.Side(), offY * delta));
+////	mLight.LocalTransform.SetPosition({0.0f, 0.0f, mDistance});
+//	mCamera.LocalTransform.Rotate(Quaternion::fromAxisAngle(mCamera.LocalTransform.Up(), offX * delta));
+//	mCamera.LocalTransform.Rotate(Quaternion::fromAxisAngle(mCamera.LocalTransform.Side(), offY * delta));
+//
+////	mCenter->LocalTransform.Rotate(Quaternion::fromAxisAngle(mCenter->LocalTransform.Up(), offX * delta));
+////	mCenter->LocalTransform.Rotate(Quaternion::fromAxisAngle(mCenter->LocalTransform.Side(), offY * delta));
+//	mCenter->LocalTransform.Rotate(Quaternion::fromAxisAngle(mCamera.LocalTransform.Up(), offX * delta));
+//	mCenter->LocalTransform.Rotate(Quaternion::fromAxisAngle(mCamera.LocalTransform.Side(), offY * delta));
 
 	// friction baby!
 	if (!mDragging)

@@ -239,16 +239,15 @@ void RenderTarget::Create(int width, int height)
 
 		glGenTextures(1, &mTextureId);
 		assert(mTextureId != 0 && "Failed to create texture");
-
 	}
 
 	mWidth = width;
 	mHeight = height;
 
 	glBindTexture(GL_TEXTURE_2D, mTextureId);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mWidth, mHeight, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mWidth, mHeight, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, mFramebuffer);
@@ -266,6 +265,7 @@ void RenderTarget::Create(int width, int height)
 void RenderTarget::BindToWrite()
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, mFramebuffer);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, mWidth, mHeight);
 }
 
@@ -320,7 +320,6 @@ void RenderTargetCube::Create(int width, int height)
 
 		glGenTextures(1, &mTextureId);
 		assert(mTextureId != 0 && "Failed to create texture");
-
 	}
 
 	mWidth = width;

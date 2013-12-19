@@ -61,6 +61,12 @@ uniform Environment environment;
 uniform Light lightSource;
 uniform Material material;
 
+in vec4 worldPosition;
+in vec3 worldNormal;
+in vec3 vReflect;
+in vec3 vRefract[3];
+in float vReflectionFactor;
+
 vec3 AmbientContribution()
 {
 	vec3 textureContribution = texture(material.ambientTexture, exTexCoords).rgb;
@@ -98,11 +104,6 @@ vec3 getNormal(vec3 normal, vec3 tangent, vec2 texCoords)
 	}
 
 	return _normal;
-}
-
-float fresnelReflectance(float VdotN, float r0)
-{
-	return r0 + (1.0 - r0) * pow(1.0 - VdotN, 5.0);
 }
 
 void main(void)
@@ -146,39 +147,44 @@ void main(void)
 			lightSource.quadraticAttenuation * lightDistance * lightDistance);
 	}
 
+	//		   | Air  | material
+	//         \/	  \/
+	float eta = 1.0 / material.refractionIndex;
+	float r0 = pow(1.0 - eta, 2.0) / pow(1.0 + eta, 2.0);
+	float fresnel = r0 + (1.0 - r0) * pow(1.0 - dot(view, normal), 5.0);
 
-	vec3 color = environment.ambient + (ambient + diffuse + specular) * attenuation;
+	vec3 color = environment.ambient + (ambient + diffuse + fresnel * specular) * attenuation;
 
+	// float l = length(environment.ambient + ambient);
+	// float val = min(NdotL * l + (1.0 - l), 1.0);
+	vec3 view_world = vec3(inverseViewMatrix * vec4(view, 0.0));
+	vec3 worldNormal = vec3(inverseViewMatrix * vec4(normal, 0.0));
 	if (material.transparency < 1.0)
 	{
-		//		   | Air  | material
-		//         \/	  \/
-		float rr = 1.0 / material.refractionIndex;
-		float r0 = pow(1.0 - rr, 2.0) / pow(1.0 + rr, 2.0);
-		float fresnel = fresnelReflectance(dot(view, normal), r0);
+		vec3 vReflected = reflect(-view_world, worldNormal);
 
-		diffuse = DiffuseContribution() * (NdotL * 0.5 + 0.5);
-		vec3 vRefracted = refract(-view, normal, rr);
-		vec3 vReflected = reflect(-view, normal);
-		// Both view and normal were in eye coords, so we need to transform them to world coords
-		vRefracted = vec3(inverseViewMatrix * vec4(vRefracted, 0.0));
-		vReflected = vec3(inverseViewMatrix * vec4(vReflected, 0.0));
+		// Chromatic Aberration
+		vec3 vRefractedR = refract(-view_world, worldNormal, material.refractionIndex);
+		vec3 vRefractedG = refract(-view_world, worldNormal, material.refractionIndex * 0.99);
+		vec3 vRefractedB = refract(-view_world, worldNormal, material.refractionIndex * 0.98);
 
-		vec3 cRefracted = texture(environment.map, vRefracted).rgb;
+		vec3 cRefracted;
+		cRefracted.r = texture(environment.map, vRefractedR).r;
+		cRefracted.g = texture(environment.map, vRefractedG).g;
+		cRefracted.b = texture(environment.map, vRefractedB).b;
 		vec3 cReflected = texture(environment.map, vReflected).rgb;
 
-		color = mix(color, cReflected, fresnel);
-		color = mix(cRefracted, color, material.transparency);
+		// color = mix(color, cReflected, fresnel);
+		// color = mix(cRefracted, color, material.transparency);
+		float reflectivity = min(material.reflectivity + fresnel, 1.0);
+		vec3 newColor = mix(cRefracted, cReflected, reflectivity);
+		color = mix(newColor, color, material.transparency);
 	}
 	else if (material.reflectivity > 0.0)
 	{
-		float l = length(environment.ambient + ambient);
-		float val = min(NdotL * l + (1.0 - l), 1.0);
-		vec3 vReflected = reflect(-view, normal);
-		// Same as above
-		vReflected = vec3(inverseViewMatrix * vec4(vReflected, 0.0));
-		vec3 cReflected = texture(environment.map, vReflected).rgb * val;
-		color = mix(color, cReflected, material.reflectivity);
+		vec3 vReflected = reflect(-view_world, worldNormal);
+		vec4 reflectedColor = textureCube(environment.map, vReflected);
+		color = mix(color, reflectedColor.rgb, material.reflectivity);
 	}
 
 	FragmentColor = vec4(color, 1.0);

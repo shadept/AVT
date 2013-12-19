@@ -40,7 +40,7 @@ private:
 	int mMaterial;
 
 	Node* mCenter;
-	Geometry* mSphere, *mModel;
+	Geometry* mSphere, *mModel, *mDiablo;
 	Light mLight;
 };
 

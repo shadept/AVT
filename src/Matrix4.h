@@ -6,6 +6,20 @@
 
 // All these matrices are row major
 
+class Matrix4;
+
+class Matrix3
+{
+public:
+	Matrix3();
+	Matrix3(const Matrix4& src);
+
+	Vector3 operator*(const Vector3& v) const;
+
+private:
+	Real m[9];
+};
+
 class Matrix4
 {
 public:
