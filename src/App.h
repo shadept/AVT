@@ -39,8 +39,9 @@ private:
 	bool mMovingSphere = true;
 	int mMaterial, subDivision = 1;
 
-	Node* mCenter;
-	Geometry* mSphere, *mModel, *mDiablo;
+	std::vector<Geometry*> mGems;
+	std::vector<Texture*> mBackgroundTextures;
+	Geometry* mBackground, *mCurrentGem;
 	Light mLight;
 };
 

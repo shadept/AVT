@@ -5,6 +5,8 @@ in vec3 exNormal;
 in vec3 exTangent;
 in vec2 exTexCoords;
 
+in vec3 model_vertex;
+
 out vec4 FragmentColor;
 
 // Matrix Uniforms
@@ -147,7 +149,6 @@ void main(void)
 	float r0 = pow(1.0 - eta, 2.0) / pow(1.0 + eta, 2.0);
 	float fresnel = r0 + (1.0 - r0) * pow(1.0 - dot(view, normal), 5.0);
 
-	vec3 color = environment.ambient + (ambient + diffuse + fresnel * specular) * attenuation;
 
 	// float l = length(environment.ambient + ambient);
 	// float val = min(NdotL * l + (1.0 - l), 1.0);
@@ -166,20 +167,22 @@ void main(void)
 		cRefracted.r = texture(environment.map, vRefractedR).r;
 		cRefracted.g = texture(environment.map, vRefractedG).g;
 		cRefracted.b = texture(environment.map, vRefractedB).b;
-		vec3 cReflected = texture(environment.map, vReflected).rgb;
+		vec3 cReflected = texture(environment.map, normalize(vReflected + model_vertex)).rgb;
 
 		// color = mix(color, cReflected, fresnel);
 		// color = mix(cRefracted, color, material.transparency);
 		float reflectivity = min(material.reflectivity + fresnel, 1.0);
 		vec3 newColor = mix(cRefracted, cReflected, reflectivity);
-		color = mix(newColor, color, material.transparency);
+		diffuse = mix(newColor, diffuse, material.transparency);
 	}
 	else if (material.reflectivity > 0.0)
 	{
 		vec3 vReflected = reflect(-view_world, worldNormal);
-		vec4 reflectedColor = texture(environment.map, vReflected);
-		color = mix(color, reflectedColor.rgb, material.reflectivity);
+		vec4 reflectedColor = texture(environment.map, normalize(vReflected + model_vertex));
+		diffuse = mix(diffuse, reflectedColor.rgb, material.reflectivity);
 	}
+
+	vec3 color = environment.ambient + (ambient + diffuse + fresnel * specular) * attenuation;
 
 	FragmentColor = vec4(color, 1.0);
 	//FragmentColor = vec4(exTexCoords.s, exTexCoords.t, 0.0, 1.0);

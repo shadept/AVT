@@ -13,7 +13,7 @@ App::App(ArgumentList args) :
 	mTotalTime = 0.0f;
 	mCameraUp = Vector3::AxisY;
 	mOffsetX = mOffsetY = 0;
-//	mOffsetX = 1.5f;
+	mOffsetX = 0.02f;
 	mDragOriginX = mDragOriginY = 0.0f;
 	mDistance = 5.0f;
 	mDragging = mFriction = false;
@@ -29,7 +29,6 @@ App::App(ArgumentList args) :
 	mLight.mSpecularColor = Vector3(1.0f, 1.0f, 1.0f);
 
 	mWorld.AttachChild(&mLight);
-//	mWorld.AttachChild(mLight.mDebugSphere);
 
 	mRenderer->SetLighting(true);
 	mRenderer->Draw(&mLight);
@@ -39,79 +38,55 @@ App::App(ArgumentList args) :
 
 	mRenderer->SetCamera(&mCamera);
 
-	mModel = new Geometry("model");
-	mWorld.AttachChild(mModel);
-
-	mCenter = new Node("center");
-//	mCenter->AttachChild(mModel);
-
 	MeshManager.Load("sphere", "./models/sphere.obj");
-	MeshManager.Load("cube", "./models/cube.obj");
-	MeshManager.Load("cylinder", "./models/cylinder.obj");
-	MeshManager.Load("torus", "./models/torus.obj");
-	MeshManager.Load("knot", "./models/knot.obj");
-	MeshManager.Load("diamond", "./models/diamond.obj");
-	MeshManager.Load("suzanne", "./models/suzanne.obj");
-	MeshManager.Load("bunny", "./models/bunny.obj");
 
-	MeshManager.Load("diablo", "./models/Diablo.obj");
-	MeshManager.Load("headcrab", "./models/headcrab.obj");
-	MeshManager.Load("kaleidoscope", "./models/kaleidoscope.obj");
-//	MeshManager.Load("kaleidoscope", "./models/sphere.obj"); // esta esfera nao funca lol, normals ao contrario
+	MeshManager.Load("prism1", "./models/prism1.obj");
+	MeshManager.Load("prism2", "./models/prism2.obj");
+	MeshManager.Load("prism3", "./models/prism3.obj");
+	MeshManager.Load("prism4", "./models/prism4.obj");
+	MeshManager.Load("prism5", "./models/prism5.obj");
+	MeshManager.Load("prism6", "./models/prism6.obj");
+	MeshManager.Load("prism7", "./models/prism7.obj");
 
-	mModel->SetMesh(MeshManager["sphere"]->GetRaw());
+	mGems.push_back(new Geometry("prism1", MeshManager["prism1"]->GetRaw(), MaterialManager["glass"]->GetRaw()));
+	mGems.push_back(new Geometry("prism2", MeshManager["prism2"]->GetRaw(), MaterialManager["emerald"]->GetRaw()));
+	mGems.push_back(new Geometry("prism3", MeshManager["prism3"]->GetRaw(), MaterialManager["turquoise"]->GetRaw()));
+	mGems.push_back(new Geometry("prism4", MeshManager["prism4"]->GetRaw(), MaterialManager["jade"]->GetRaw()));
+	mGems.push_back(new Geometry("prism5", MeshManager["prism5"]->GetRaw(), MaterialManager["pearl"]->GetRaw()));
+	mGems.push_back(new Geometry("prism6", MeshManager["prism6"]->GetRaw(), MaterialManager["ruby"]->GetRaw()));
+	mGems.push_back(new Geometry("prism7", MeshManager["prism7"]->GetRaw(), MaterialManager["diamond"]->GetRaw()));
 
-	TextureManager.Load("bunny", "./textures/bunny.png");
+	TextureManager.Load("background1", "./textures/image7.png");
+	TextureManager.Load("background2", "./textures/image2-3.png");
+	TextureManager.Load("background3", "./textures/image4.png");
+	TextureManager.Load("background4", "./textures/image9.png");
+	TextureManager.Load("background5", "./textures/image8.png");
 
-	TextureManager.Load("image4", "./textures/image4.png");
-	TextureManager.Load("image9", "./textures/image9.png");
+	mBackgroundTextures.push_back(TextureManager["background1"]->GetRaw());
+	mBackgroundTextures.push_back(TextureManager["background2"]->GetRaw());
+	mBackgroundTextures.push_back(TextureManager["background3"]->GetRaw());
+	mBackgroundTextures.push_back(TextureManager["background4"]->GetRaw());
+	mBackgroundTextures.push_back(TextureManager["background5"]->GetRaw());
 
-	Material* bunnyMaterial = new Material();
-	bunnyMaterial->mAmbient = Vector3(0.1f, 0.05f, 0.0f);
-	bunnyMaterial->mDiffuse = Vector3(1.0f, 1.0f, 1.0f);
-	bunnyMaterial->mSpecular = Vector3(1.0f, 0.5f, 0.0f);
-	bunnyMaterial->mShininess = 0.1f;
-	bunnyMaterial->mDiffuseMap = TextureManager["bunny"]->GetRaw();
-	MaterialManager.Add("bunny", bunnyMaterial);
+	Material* backgroundMaterial = new Material();
+	backgroundMaterial->mAmbient = Vector3(0.1f, 0.1f, 0.1f);
+	backgroundMaterial->mDiffuse = Vector3(1.0f, 1.0f, 1.0f);
+	backgroundMaterial->mSpecular = Vector3(0.0f, 0.0f, 0.0f);
+	backgroundMaterial->mShininess = 0.0f;
+	backgroundMaterial->mDiffuseMap = TextureManager["background1"]->GetRaw();
+	MaterialManager.Add("background", backgroundMaterial);
 
-	Material* kaleidoscopeMaterial = new Material();
-	kaleidoscopeMaterial->mAmbient = Vector3(0.1f, 0.1f, 0.1f);
-	kaleidoscopeMaterial->mDiffuse = Vector3(1.0f, 1.0f, 1.0f);
-	kaleidoscopeMaterial->mSpecular = Vector3(0.0f, 0.0f, 0.0f);
-	kaleidoscopeMaterial->mShininess = 0.0f;
-	kaleidoscopeMaterial->mDiffuseMap = TextureManager["image4"]->GetRaw();
-	MaterialManager.Add("kaleidoscope", kaleidoscopeMaterial);
+	// Scene
+	mBackground = new Geometry("background", IcoSphere::Create(subDivision), MaterialManager["background"]->GetRaw());
+	mBackground->LocalTransform.SetScale({20.f, 20.f, 20.f});
+	mWorld.AttachChild(mBackground);
 
-	MaterialManager.Load("diablo_material", "./materials/diablo.mtl");
-	MaterialManager.Load("headcrab_material", "./materials/headcrab.mtl");
-
-	mModel->SetMaterial(MaterialManager["chrome"]->GetRaw());
-
-	mWorld.AttachChild(mCenter);
-
-	mSphere = new Geometry("sphere");
-	mSphere->SetMesh(IcoSphere::Create(subDivision));
-	//mSphere->SetMesh(MeshManager["kaleidoscope"]->GetRaw());
-	mSphere->SetMaterial(MaterialManager["kaleidoscope"]->GetRaw());
-	mSphere->LocalTransform.SetPosition({ 0.0f, 0.0f, 0.0f });
-	mSphere->LocalTransform.SetScale({ 20.0f, 20.0f, 20.0f });
-
-	mWorld.AttachChild(mSphere);
-
-	mDiablo = new Geometry("ball", MeshManager["diablo"]->GetRaw(), MaterialManager["diablo"]->GetRaw());
-	mDiablo->LocalTransform.SetPosition({0.f, -.3f, 0.f});
-	mDiablo->LocalTransform.SetScale({0.5f, 0.5f, 0.5f});
-	mDiablo->LocalTransform.SetRotation(Vector3::AxisY, 180);
-
-	//mCenter->AttachChild(mDiablo);
+	mCurrentGem = new Geometry("gem", MeshManager["prism1"]->GetRaw(), MaterialManager["glass"]->GetRaw());
+	mWorld.AttachChild(mCurrentGem);
 }
 
 App::~App()
 {
-	delete mCenter;
-	delete mSphere;
-	delete mModel;
-	delete mDiablo;
 }
 
 void App::OnDraw()
@@ -166,123 +141,40 @@ void App::OnMouseMotion(int x, int y)
 
 void App::OnKeyboard(unsigned char key, int x, int y)
 {
-	static bool lighting = true;
-
-	if (key == 'l')
+	if (key >= '1' && key < '8')
 	{
-		lighting = !lighting;
-		mRenderer->SetLighting(lighting);
-	}
-
-	if (key == 'm')
-	{
-		static std::string material[7] = {"gold", "chrome", "ruby", "clear_glass", "glass", "diamond", "default"};
-		mMaterial = (mMaterial + 1) % 7;
-		mModel->SetMaterial(MaterialManager[material[mMaterial]]->GetRaw());
-//		switch(mMaterial)
-//		{
-//		case 0: mModel->SetMaterial(MaterialManager["gold"]->GetRaw()); break;
-//		case 1: mModel->SetMaterial(MaterialManager["chrome"]->GetRaw()); break;
-//		case 2: mModel->SetMaterial(MaterialManager["ruby"]->GetRaw()); break;
-//		case 3: mModel->SetMaterial(MaterialManager["glass"]->GetRaw());break;
-//		default: mModel->SetMaterial(MaterialManager["default"]->GetRaw());
-//		}
-	}
-
-	if (key == 'c')
-	{
-		static std::string models[8] = {"sphere", "cube", "cylinder", "torus", "knot", "diamond", "suzanne", "bunny"};//, "diablo", "headcrab"};
-		static int k = 0;
-		k = (k + 1) % 8;
-		mModel->SetMesh(MeshManager[models[k]]->GetRaw());
-//		switch (k)
-//		{
-//		case 0:
-//		case 1:
-//		case 2:
-//		case 3:
-//		case 4:
-//			MaterialManager["glass"]->GetRaw()->mDiffuseMap = nullptr;
-//			mModel->SetMesh(MeshManager[models[k]]->GetRaw());
-//			break;
-//		case 5:
-//			mModel->SetMesh(MeshManager["bunny"]->GetRaw());
-//			MaterialManager["glass"]->GetRaw()->mDiffuseMap = TextureManager["bunny"]->GetRaw();
-//			MaterialManager["glass"]->GetRaw()->mBumpMap = NULL;
-//			break;
-//		case 6:
-//			mModel->SetMesh(MeshManager["diablo"]->GetRaw());
-//			MaterialManager["glass"]->GetRaw()->mDiffuseMap = TextureManager["Diablo_diff.png"]->GetRaw();
-//			MaterialManager["glass"]->GetRaw()->mBumpMap = TextureManager["Diablo_norm.png"]->GetRaw();
-//			break;
-//		case 7:
-//			mModel->SetMesh(MeshManager["headcrab"]->GetRaw());
-//			MaterialManager["glass"]->GetRaw()->mDiffuseMap = TextureManager["headcrab.png"]->GetRaw();
-//			MaterialManager["glass"]->GetRaw()->mBumpMap = TextureManager["headcrab_normal.png"]->GetRaw();
-//			break;
-//		}
+		int gem = key - '1';
+		mCurrentGem->SetMesh(mGems[gem]->GetMesh());
+		mCurrentGem->SetMaterial(mGems[gem]->GetMaterial());
 	}
 
 	if (key == 'k')
 	{
-		static int k = 0;
-		k = (k + 1) % 3;
-		switch (k)
-		{
-		case 0: mSphere->SetShader(NULL); MaterialManager["kaleidoscope"]->GetRaw()->mDiffuseMap = TextureManager["image4"]->GetRaw(); break;
-		case 1: MaterialManager["kaleidoscope"]->GetRaw()->mDiffuseMap = TextureManager["image9"]->GetRaw(); break;
-		case 2: mSphere->SetShader(ShaderManager["skybox"]->GetRaw()); break;
-		}
-	}
-
-	if (key == 's')
-	{
-		static int debug = 0;
-		debug = (debug + 1) % Renderer::MAX_DEBUG;
-		mRenderer->SetDebug((Renderer::DebugShader)debug);
+		static int background = 0;
+		background = (background + 1) % mBackgroundTextures.size();
+		MaterialManager["background"]->GetRaw()->mDiffuseMap = mBackgroundTextures[background];
 	}
 
 	if (key == 'f')
 		mFriction = !mFriction;
 
-	if (key == 'i')
-	{
-		std::cout << "Position: " << mCamera.WorldTransform.Position();
-		Vector3 v = mCamera.WorldTransform.Orientation() * mCamera.WorldTransform.Position();
-		std::cout << "Transformed: " << v;
-		std::cout << "Length: " << v.length() << std::endl;
-	}
-
 	if (key == ' ')
 		mMovingSphere = !mMovingSphere;
 
-	if (key == 'o')
+	if (key == '-')
 	{
 		subDivision = Math::max(subDivision - 1, 0);
-		delete mSphere->GetMesh();
-		mSphere->SetMesh(IcoSphere::Create(subDivision));
+		delete mBackground->GetMesh();
+		mBackground->SetMesh(IcoSphere::Create(subDivision));
 	}
 
-	if (key == 'p')
+	if (key == '+')
 	{
 		subDivision = Math::min(subDivision + 1, 3);
-		delete mSphere->GetMesh();
-		mSphere->SetMesh(IcoSphere::Create(subDivision));
+		delete mBackground->GetMesh();
+		mBackground->SetMesh(IcoSphere::Create(subDivision));
 	}
 
-	static Vector3 lookAt[] = { {1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1} };
-	static Vector3 up[] = { {0, 1, 0}, {0, 1, 0}, {0, 0, -1}, {0, 0, 1}, {0, 1, 0}, {0, 1, 0} };
-	static float ratio = (float) mWindow->GetWidth() / mWindow->GetHeight();
-	switch(key)
-	{
-	case '0': mCamera.SetPerspective(35.0f, ratio, 1.0f, 50.0f); mDistance = 5.0f; mCamera.SetLookAt({0.0f, 0.0f, mDistance}, Vector3::Zero); break;
-	case '1': mDistance = 0.0f; mCamera.SetPerspective(90.0f, 1.0f, 1.0f, 50.0f); mCamera.SetLookAt(Vector3::Zero, lookAt[0], up[0]); break;
-	case '2': mDistance = 0.0f; mCamera.SetPerspective(90.0f, 1.0f, 1.0f, 50.0f); mCamera.SetLookAt(Vector3::Zero, lookAt[1], up[1]); break;
-	case '3': mDistance = 0.0f; mCamera.SetPerspective(90.0f, 1.0f, 1.0f, 50.0f); mCamera.SetLookAt(Vector3::Zero, lookAt[2], up[2]); break;
-	case '4': mDistance = 0.0f; mCamera.SetPerspective(90.0f, 1.0f, 1.0f, 50.0f); mCamera.SetLookAt(Vector3::Zero, lookAt[3], up[3]); break;
-	case '5': mDistance = 0.0f; mCamera.SetPerspective(90.0f, 1.0f, 1.0f, 50.0f); mCamera.SetLookAt(Vector3::Zero, lookAt[4], up[4]); break;
-	case '6': mDistance = 0.0f; mCamera.SetPerspective(90.0f, 1.0f, 1.0f, 50.0f); mCamera.SetLookAt(Vector3::Zero, lookAt[5], up[5]); break;
-	}
 }
 
 void App::OnResize(int w, int h)
@@ -301,13 +193,11 @@ void App::OnUpdate(const Real delta)
 
 	if (envMapCounter > 1.0f/30.0f) // every 1/30 seconds
 	{
-		mModel->Enabled(false);
-//		Vector3 position = mCamera.WorldTransform.Orientation() * -mCamera.WorldTransform.Position();
-//		position.Z = -position.Z;
-		Vector3 position = mModel->WorldTransform.Position();
+		mCurrentGem->Enabled(false);
+		Vector3 position = mCurrentGem->WorldTransform.Position();
 		mRenderer->BuildEnvironmentMap(&mWorld, position);
 		envMapCounter = 0.0f;
-		mModel->Enabled(true);
+		mCurrentGem->Enabled(true);
 	}
 
 	while (counter >= 1.0f)
@@ -322,32 +212,21 @@ void App::OnUpdate(const Real delta)
 
 	mWorld.OnUpdate(delta);
 
-	Real offX = Math::clamp(mOffsetX * 130.0f, -1000.0f, 1000.0f);
-	Real offY = Math::clamp(mOffsetY * 130.0f, -1000.0f, 1000.0f);
+	Real offX = Math::clamp(mOffsetX * 50.0f, -1000.0f, 1000.0f);
+	Real offY = Math::clamp(mOffsetY * 50.0f, -1000.0f, 1000.0f);
 
 	if (mMovingSphere)
 	{
-//		mSphere->LocalTransform.Rotate(Quaternion::fromAxisAngle(mSphere->LocalTransform.Up(), -offX * delta / 200.0f));
-//		mSphere->LocalTransform.Rotate(Quaternion::fromAxisAngle(mSphere->LocalTransform.Side(), -offY * delta / 200.0f));
-		mCamera.LocalTransform.SetPosition(Vector3(0.0f, 0.0f, -mDistance));
-		mCamera.LocalTransform.Rotate(Quaternion::fromAxisAngle(mCamera.LocalTransform.Up(), offX * delta));
-		mCamera.LocalTransform.Rotate(Quaternion::fromAxisAngle(mCamera.LocalTransform.Side(), offY * delta));
+		mBackground->LocalTransform.Rotate(Quaternion::fromAxisAngle(mBackground->LocalTransform.Up(), offX * delta));
+		mBackground->LocalTransform.Rotate(Quaternion::fromAxisAngle(mBackground->LocalTransform.Side(), offY * delta));
 	}
 	else
 	{
-		mCenter->LocalTransform.SetPosition(Vector3(0.0f, 0.0f, mDistance));
-		mCenter->LocalTransform.Rotate(Quaternion::fromAxisAngle(mCenter->LocalTransform.Up(), offX * delta));
-		mCenter->LocalTransform.Rotate(Quaternion::fromAxisAngle(mCenter->LocalTransform.Side(), offY * delta));
+		mCurrentGem->LocalTransform.Rotate(Quaternion::fromAxisAngle(mCurrentGem->LocalTransform.Up(), offX * delta));
+		mCurrentGem->LocalTransform.Rotate(Quaternion::fromAxisAngle(mCurrentGem->LocalTransform.Side(), offY * delta));
 	}
 
-////	mLight.LocalTransform.SetPosition({0.0f, 0.0f, mDistance});
-//	mCamera.LocalTransform.Rotate(Quaternion::fromAxisAngle(mCamera.LocalTransform.Up(), offX * delta));
-//	mCamera.LocalTransform.Rotate(Quaternion::fromAxisAngle(mCamera.LocalTransform.Side(), offY * delta));
-//
-////	mCenter->LocalTransform.Rotate(Quaternion::fromAxisAngle(mCenter->LocalTransform.Up(), offX * delta));
-////	mCenter->LocalTransform.Rotate(Quaternion::fromAxisAngle(mCenter->LocalTransform.Side(), offY * delta));
-//	mCenter->LocalTransform.Rotate(Quaternion::fromAxisAngle(mCamera.LocalTransform.Up(), offX * delta));
-//	mCenter->LocalTransform.Rotate(Quaternion::fromAxisAngle(mCamera.LocalTransform.Side(), offY * delta));
+	mCamera.LocalTransform.SetPosition(Vector3(0.0f, 0.0f, -mDistance));
 
 	// friction baby!
 	if (!mDragging)

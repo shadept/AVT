@@ -15,12 +15,16 @@ out vec3 exNormal;
 out vec3 exTangent;
 out vec2 exTexCoords;
 
+out vec3 model_vertex;
+
 void main(void)
 {	
 	exVertex = (ModelViewMatrix * vec4(in_Position, 1.0)).xyz;
 	exNormal = (NormalMatrix * vec4(in_Normal, 0.0)).xyz;
 	exTangent = (NormalMatrix * vec4(in_Tangent, 0.0)).xyz;
 	exTexCoords = in_TexCoords;
+
+	model_vertex = in_Position;
 
 	gl_Position = ModelViewProjectionMatrix *  vec4(in_Position, 1.0);
 }
